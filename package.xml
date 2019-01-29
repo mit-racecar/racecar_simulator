@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>racecar_simulator</name>
+  <version>0.0.0</version>
+  <description>A simulator of the MIT racecar.</description>
+
+  <maintainer email="tfh@mit.edu">tfh</maintainer>
+
+  <license>MIT</license>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>tf2_ros</run_depend>
+</package>
