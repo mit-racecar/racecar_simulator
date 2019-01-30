@@ -1,13 +1,11 @@
 #include <ros/ros.h>
 
+#include <tf2/impl/utils.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
-
-// TODO DELETE
-#include <geometry_msgs/PoseStamped.h>
 
 #include "racecar_simulator/pose_2d.hpp"
 #include "racecar_simulator/ackermann_kinematics.hpp"
@@ -47,9 +45,6 @@ class RacecarSimulator {
     // Publish a scan
     ros::Publisher scan_pub;
 
-    // TODO DELETE
-    ros::Publisher pose_pub;
-
   public:
 
     RacecarSimulator() {
@@ -83,9 +78,6 @@ class RacecarSimulator {
           scan_beams,
           scan_field_of_view,
           scan_std_dev);
-
-      // TODO DELETE
-      pose_pub = n.advertise<geometry_msgs::PoseStamped>("/pose", 1);
 
       // Make a publisher for laser scan messages
       scan_pub = n.advertise<sensor_msgs::LaserScan>(scan_topic, 1);
@@ -134,14 +126,11 @@ class RacecarSimulator {
       // Publish it
       br.sendTransform(ts);
 
-      // TODO DELETE
-      geometry_msgs::PoseStamped ps;
-      ps.header.stamp = timestamp;
-			ps.header.frame_id = "/base_link";
-			pose_pub.publish(ps);
-
       // If we have a map, perform a scan
       if (map_exists) {
+        // TODO
+        // Get the pose of the laser in the map frame
+        // (Currently this is base link)
         std::vector<double> scan = scan_simulator.scan(pose);
 
         // Convert to float
@@ -174,10 +163,13 @@ class RacecarSimulator {
       size_t height = msg.info.height;
       size_t width = msg.info.width;
       double resolution = msg.info.resolution;
+      // Convert the ROS origin to a pose
       Pose2D origin;
       origin.x = msg.info.origin.position.x;
       origin.y = msg.info.origin.position.y;
-      origin.theta = 0;
+      geometry_msgs::Quaternion q = msg.info.origin.orientation;
+      tf2::Quaternion quat(q.x, q.y, q.z, q.w);
+      origin.theta = tf2::impl::getYaw(quat);
 
       // Convert the map to probability values
       std::vector<double> map(msg.data.size());
