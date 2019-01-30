@@ -1,5 +1,3 @@
-#include <limits>
-
 #include <ros/ros.h>
 #include <nav_msgs/OccupancyGrid.h>
 
@@ -10,14 +8,10 @@ using namespace racecar_simulator;
 class DistanceTransformVisualizer {
   private:
     // Anything below this is considered free
-    double free_threshold_probability;
+    double map_free_threshold;
 
     // A ROS node
     ros::NodeHandle n;
-
-    // A timer to update the pose
-    ros::Timer update_pose_timer;
-    double update_pose_rate;
 
     // Listen for a map
     ros::Subscriber map_sub;
@@ -28,10 +22,14 @@ class DistanceTransformVisualizer {
   public:
 
     DistanceTransformVisualizer() {
+      // Initialize the node handle
+      n = ros::NodeHandle("~");
+
       // Fetch the ROS parameters
-      std::string map_topic = "/map";
-      std::string dt_topic = "/dt";
-      free_threshold_probability = 0.3;
+      std::string map_topic, dt_topic;
+      n.getParam("map_topic", map_topic);
+      n.getParam("distance_transform_topic", dt_topic);
+      n.getParam("map_free_threshold", map_free_threshold);
 
       // Make a publisher for the distance transform
       dt_pub = n.advertise<nav_msgs::OccupancyGrid>(dt_topic, 1, true);
@@ -49,7 +47,7 @@ class DistanceTransformVisualizer {
 
       // Make occupied inf and unoccupied 0
       for (size_t i = 0; i < map_msg.data.size(); i++) {
-        if (map_msg.data[i]/100. <= free_threshold_probability and
+        if (map_msg.data[i]/100. <= map_free_threshold and
             map_msg.data[i] >= 0) {
           dt[i] = 99999;
         } else {

@@ -26,7 +26,7 @@ class RacecarSimulator {
 
     // A simulator of the laser
     ScanSimulator2D scan_simulator;
-    double free_threshold;
+    double map_free_threshold;
 
     // A ROS node
     ros::NodeHandle n;
@@ -36,7 +36,6 @@ class RacecarSimulator {
 
     // A timer to update the pose
     ros::Timer update_pose_timer;
-    double update_pose_rate;
 
     // Listen for drive commands
     ros::Subscriber drive_sub;
@@ -54,22 +53,30 @@ class RacecarSimulator {
   public:
 
     RacecarSimulator() {
+      // Initialize the node handle
+      n = ros::NodeHandle("~");
+
       // Initialize the pose and driving commands
       pose = {.x=0, .y=0, .theta=0};
       speed = 0;
       steering_angle = 0;
       previous_seconds = ros::Time::now().toSec();
 
-      // Fetch the ROS parameters
-      wheelbase = 0.34;
-      update_pose_rate = 0.01;
-      std::string drive_topic = "/vesc/low_level/ackermann_cmd_mux/output";
-      std::string map_topic = "/map";
-      std::string scan_topic = "/scan";
-      int scan_beams = 100;
-      double scan_field_of_view = M_PI * 3/2.;
-      double scan_std_dev = 0.01;
-      free_threshold = 0.3;
+      // Get the topic names
+      std::string drive_topic, map_topic, scan_topic;
+      n.getParam("drive_topic", drive_topic);
+      n.getParam("map_topic", map_topic);
+      n.getParam("scan_topic", scan_topic);
+
+      // Fetch the car parameters
+      int scan_beams;
+      double update_pose_rate, scan_field_of_view, scan_std_dev;
+      n.getParam("wheelbase", wheelbase);
+      n.getParam("update_pose_rate", update_pose_rate);
+      n.getParam("scan_beams", scan_beams);
+      n.getParam("scan_field_of_view", scan_field_of_view);
+      n.getParam("scan_std_dev", scan_std_dev);
+      n.getParam("map_free_threshold", map_free_threshold);
 
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
@@ -189,7 +196,7 @@ class RacecarSimulator {
           width,
           resolution,
           origin,
-          free_threshold);
+          map_free_threshold);
       map_exists = true;
     }
 };

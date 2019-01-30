@@ -1,0 +1,14 @@
+wheelbase: 0.34
+
+update_pose_rate: 0.01
+
+scan_beams: 100
+scan_field_of_view: 4.71
+scan_std_dev: 0.01
+
+map_free_threshold: 0.3
+
+drive_topic: "/vesc/low_level/ackermann_cmd_mux/output"
+map_topic: "/map"
+distance_transform_topic: "/dt"
+scan_topic: "/scan"
