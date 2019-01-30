@@ -8,7 +8,14 @@ scan_std_dev: 0.01
 
 map_free_threshold: 0.3
 
-drive_topic: "/vesc/low_level/ackermann_cmd_mux/output"
+joy_topic: "/joy"
+drive_topic: "/drive"
 map_topic: "/map"
 distance_transform_topic: "/dt"
 scan_topic: "/scan"
+
+joy: true
+joy_speed_axis: 1
+joy_angle_axis: 2
+joy_max_speed: 2.
+joy_max_angle: 0.34

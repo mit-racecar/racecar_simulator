@@ -6,6 +6,7 @@
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
+#include <sensor_msgs/Joy.h>
 
 #include "racecar_simulator/pose_2d.hpp"
 #include "racecar_simulator/ackermann_kinematics.hpp"
@@ -26,6 +27,10 @@ class RacecarSimulator {
     ScanSimulator2D scan_simulator;
     double map_free_threshold;
 
+    // Joystick parameters
+    int joy_speed_axis, joy_angle_axis;
+    double joy_max_speed, joy_max_angle;
+
     // A ROS node
     ros::NodeHandle n;
 
@@ -35,8 +40,9 @@ class RacecarSimulator {
     // A timer to update the pose
     ros::Timer update_pose_timer;
 
-    // Listen for drive commands
+    // Listen for drive and joystick commands
     ros::Subscriber drive_sub;
+    ros::Subscriber joy_sub;
 
     // Listen for a map
     ros::Subscriber map_sub;
@@ -58,7 +64,8 @@ class RacecarSimulator {
       previous_seconds = ros::Time::now().toSec();
 
       // Get the topic names
-      std::string drive_topic, map_topic, scan_topic;
+      std::string joy_topic, drive_topic, map_topic, scan_topic;
+      n.getParam("joy_topic", joy_topic);
       n.getParam("drive_topic", drive_topic);
       n.getParam("map_topic", map_topic);
       n.getParam("scan_topic", scan_topic);
@@ -73,6 +80,14 @@ class RacecarSimulator {
       n.getParam("scan_std_dev", scan_std_dev);
       n.getParam("map_free_threshold", map_free_threshold);
 
+      // Get joystick parameters
+      bool joy;
+      n.getParam("joy", joy);
+      n.getParam("joy_speed_axis", joy_speed_axis);
+      n.getParam("joy_angle_axis", joy_angle_axis);
+      n.getParam("joy_max_speed", joy_max_speed);
+      n.getParam("joy_max_angle", joy_max_angle);
+
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
           scan_beams,
@@ -84,6 +99,11 @@ class RacecarSimulator {
 
       // Start a timer to output the pose
       update_pose_timer = n.createTimer(ros::Duration(update_pose_rate), &RacecarSimulator::update_pose, this);
+
+      // If the joystick is enabled
+      if (joy)
+        // Start a subscriber to listen to joystick commands
+        joy_sub = n.subscribe(joy_topic, 1, &RacecarSimulator::joy_callback, this);
 
       // Start a subscriber to listen to drive commands
       drive_sub = n.subscribe(drive_topic, 1, &RacecarSimulator::drive_callback, this);
@@ -156,6 +176,11 @@ class RacecarSimulator {
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
       speed = msg.drive.speed;
       steering_angle = msg.drive.steering_angle;
+    }
+
+    void joy_callback(const sensor_msgs::Joy & msg) {
+      speed          = joy_max_speed * msg.axes[joy_speed_axis];
+      steering_angle = joy_max_angle * msg.axes[joy_angle_axis];
     }
 
     void map_callback(const nav_msgs::OccupancyGrid & msg) {
