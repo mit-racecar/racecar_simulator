@@ -59,8 +59,8 @@ double ScanSimulator2D::distance_transform(const Pose2D & pose) const {
   double y_rot = x_trans * sin(-origin.theta) + y_trans * cos(-origin.theta);
 
   // Clip the state to be a cell
-  if (x_rot < 0 or x_rot >= width) return 0;
-  if (y_rot < 0 or y_rot >= height) return 0;
+  if (x_rot < 0 or x_rot >= width * resolution) return 0;
+  if (y_rot < 0 or y_rot >= height * resolution) return 0;
 
   // Discretize the state into row and column
   size_t col = std::floor(x_rot/resolution);
