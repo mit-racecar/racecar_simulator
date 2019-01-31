@@ -146,6 +146,9 @@ class RacecarSimulator {
       // Publish it
       br.sendTransform(ts);
 
+      // Update the steering transform
+      update_steering_transform(timestamp);
+
       // If we have a map, perform a scan
       if (map_exists) {
         // TODO
@@ -176,11 +179,31 @@ class RacecarSimulator {
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
       speed = msg.drive.speed;
       steering_angle = msg.drive.steering_angle;
+      update_steering_transform(msg.header.stamp);
     }
 
     void joy_callback(const sensor_msgs::Joy & msg) {
       speed          = joy_max_speed * msg.axes[joy_speed_axis];
       steering_angle = joy_max_angle * msg.axes[joy_angle_axis];
+      update_steering_transform(msg.header.stamp);
+    }
+
+    void update_steering_transform(ros::Time timestamp) {
+      // Publish the steering angle
+      tf2::Quaternion quat;
+      quat.setEuler(0., 0., steering_angle);
+      geometry_msgs::TransformStamped ts;
+      ts.transform.rotation.x = quat.x();
+      ts.transform.rotation.y = quat.y();
+      ts.transform.rotation.z = quat.z();
+      ts.transform.rotation.w = quat.w();
+      ts.header.stamp = timestamp;
+      ts.header.frame_id = "front_left_hinge";
+      ts.child_frame_id = "front_left_wheel";
+      br.sendTransform(ts);
+      ts.header.frame_id = "front_right_hinge";
+      ts.child_frame_id = "front_right_wheel";
+      br.sendTransform(ts);
     }
 
     void map_callback(const nav_msgs::OccupancyGrid & msg) {

@@ -1,21 +1,33 @@
+# The distance between the front and
+# rear axle of the racecar
 wheelbase: 0.34
 
+# The rate at which the pose and the lidar publish
 update_pose_rate: 0.02
 
+# lidar simulation parameters
 scan_beams: 1000
-scan_field_of_view: 4.71
-scan_std_dev: 0.01
+scan_field_of_view: 4.71 # radians
 
+# The standard deviation of the noise applied
+# to the lidar simulation
+scan_std_dev: 0.01 # meters
+
+# The probability threshold for points
+# in the occupancy grid to be considered "free".
+# Used for the lidar simulator.
 map_free_threshold: 0.3
 
-joy_topic: "/joy"
-drive_topic: "/drive"
-map_topic: "/map"
-distance_transform_topic: "/dt"
-scan_topic: "/scan"
-
+# Enables joystick if true
 joy: true
 joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2.
 joy_max_angle: 0.34
+
+# The names of topics to listen and publish to
+joy_topic: "/joy"
+drive_topic: "/drive"
+map_topic: "/map"
+distance_transform_topic: "/dt"
+scan_topic: "/scan"

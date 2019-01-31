@@ -1,0 +1,8 @@
+<launch>
+  <!-- Open the model file -->
+  <arg name="racecar_xacro" default="$(find racecar_simulator)/racecar.xacro"/>
+  <param name="robot_description" command="xacro --inorder '$(arg racecar_xacro)'"/>
+
+  <!-- Add the transformations -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+</launch>
