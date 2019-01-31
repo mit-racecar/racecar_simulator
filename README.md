@@ -9,12 +9,15 @@ It can be built with ROS, or it can be used as a standalone C++ library.
 
 Building this package with ROS requires the following packages:
 
-- joy
-- map_server
+- tf2
+- tf2_ros
+- tf2_geometry_msgs
+- ackermann_msgs
+- nav_msgs
 - sensor_msgs
 - geometry_msgs
-- nav_msgs
-- tf2
+- joy
+- map_server
 
 These are installed by default with the desktop version of ROS.
 To install the simulator package, clone it into your catkin workspace:
@@ -49,7 +52,5 @@ Distance transform.
 ## TODO
 
 - Finish documentation
-- Add model of the lidar
-- Measure real racecar parameters
 - Add max steering angle and max speed
 - Add colision detection?

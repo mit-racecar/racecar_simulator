@@ -42,7 +42,14 @@ install(DIRECTORY include/${PROJECT_NAME}
 if(DEFINED CATKIN_DEVEL_PREFIX)
   find_package(catkin REQUIRED COMPONENTS
     roscpp
-    tf2_ros)
+    tf2
+    tf2_ros
+    tf2_geometry_msgs
+    ackermann_msgs
+    nav_msgs
+    sensor_msgs
+    geometry_msgs
+    )
 
   # Include catkin_libraries
   catkin_package(

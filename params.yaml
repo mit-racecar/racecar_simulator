@@ -1,17 +1,17 @@
 # The distance between the front and
 # rear axle of the racecar
-wheelbase: 0.34
+wheelbase: 0.325
 
 # The rate at which the pose and the lidar publish
 update_pose_rate: 0.02
 
 # Lidar simulation parameters
-scan_beams: 1000
+scan_beams: 100
 scan_field_of_view: 4.71 # radians
 
 # The distance from the center of the
 # rear axis (base_link) to the lidar
-scan_distance_to_base_link: 0.3 # meters
+scan_distance_to_base_link: 0.275 # meters
 
 # The standard deviation of the noise applied
 # to the lidar simulation
