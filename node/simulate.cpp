@@ -22,6 +22,7 @@ class RacecarSimulator {
     double speed;
     double steering_angle;
     double previous_seconds;
+    double scan_distance_to_base_link;
 
     // A simulator of the laser
     ScanSimulator2D scan_simulator;
@@ -79,6 +80,7 @@ class RacecarSimulator {
       n.getParam("scan_field_of_view", scan_field_of_view);
       n.getParam("scan_std_dev", scan_std_dev);
       n.getParam("map_free_threshold", map_free_threshold);
+      n.getParam("scan_distance_to_base_link", scan_distance_to_base_link);
 
       // Get joystick parameters
       bool joy;
@@ -140,21 +142,23 @@ class RacecarSimulator {
       geometry_msgs::TransformStamped ts;
       ts.transform = t;
       ts.header.stamp = timestamp;
-      ts.header.frame_id = "/map";
-      ts.child_frame_id = "/base_link";
+      ts.header.frame_id = "map";
+      ts.child_frame_id = "base_link";
 
       // Publish it
       br.sendTransform(ts);
-
-      // Update the steering transform
       update_steering_transform(timestamp);
-
       // If we have a map, perform a scan
       if (map_exists) {
-        // TODO
-        // Get the pose of the laser in the map frame
-        // (Currently this is base link)
-        std::vector<double> scan = scan_simulator.scan(pose);
+        // Get the pose of the lidar, given the pose of base link
+        // (base link is the center of the rear axle)
+        Pose2D lidar_pose;
+        lidar_pose.x = pose.x + scan_distance_to_base_link * std::cos(pose.theta);
+        lidar_pose.y = pose.y + scan_distance_to_base_link * std::sin(pose.theta);
+        lidar_pose.theta = pose.theta;
+
+        // Compute the scan from the lidar
+        std::vector<double> scan = scan_simulator.scan(lidar_pose);
 
         // Convert to float
         std::vector<float> scan_(scan.size());
@@ -164,7 +168,7 @@ class RacecarSimulator {
         // Publish the laser message
         sensor_msgs::LaserScan scan_msg;
         scan_msg.header.stamp = timestamp;
-        scan_msg.header.frame_id = "/base_link";
+        scan_msg.header.frame_id = "laser";
         scan_msg.angle_min = -scan_simulator.get_field_of_view()/2.;
         scan_msg.angle_max =  scan_simulator.get_field_of_view()/2.;
         scan_msg.angle_increment = scan_simulator.get_angle_increment();
@@ -173,6 +177,15 @@ class RacecarSimulator {
         scan_msg.intensities = scan_;
 
         scan_pub.publish(scan_msg);
+
+        // Publish a transformation between base link and laser
+        geometry_msgs::TransformStamped scan_ts;
+        scan_ts.transform.translation.x = scan_distance_to_base_link;
+        scan_ts.transform.rotation.w = 1;
+        scan_ts.header.stamp = timestamp;
+        scan_ts.header.frame_id = "base_link";
+        scan_ts.child_frame_id = "laser";
+        br.sendTransform(scan_ts);
       }
     }
 
