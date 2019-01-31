@@ -7,6 +7,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Joy.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 #include "racecar_simulator/pose_2d.hpp"
 #include "racecar_simulator/ackermann_kinematics.hpp"
@@ -16,6 +17,9 @@ using namespace racecar_simulator;
 
 class RacecarSimulator {
   private:
+    // The transformation frames used
+    std::string map_frame, base_frame, scan_frame;
+
     // The car state and parameters
     Pose2D pose;
     double wheelbase;
@@ -49,6 +53,10 @@ class RacecarSimulator {
     ros::Subscriber map_sub;
     bool map_exists = false;
 
+    // Listen for updates to the pose
+    ros::Subscriber pose_sub;
+    ros::Subscriber pose_rviz_sub;
+
     // Publish a scan
     ros::Publisher scan_pub;
 
@@ -65,11 +73,19 @@ class RacecarSimulator {
       previous_seconds = ros::Time::now().toSec();
 
       // Get the topic names
-      std::string joy_topic, drive_topic, map_topic, scan_topic;
+      std::string joy_topic, drive_topic, map_topic, 
+        scan_topic, pose_topic, pose_rviz_topic;
       n.getParam("joy_topic", joy_topic);
       n.getParam("drive_topic", drive_topic);
       n.getParam("map_topic", map_topic);
       n.getParam("scan_topic", scan_topic);
+      n.getParam("pose_topic", pose_topic);
+      n.getParam("pose_rviz_topic", pose_rviz_topic);
+
+      // Get the transformation frame names
+      n.getParam("map_frame", map_frame);
+      n.getParam("base_frame", base_frame);
+      n.getParam("scan_frame", scan_frame);
 
       // Fetch the car parameters
       int scan_beams;
@@ -112,6 +128,10 @@ class RacecarSimulator {
 
       // Start a subscriber to listen to new maps
       map_sub = n.subscribe(map_topic, 1, &RacecarSimulator::map_callback, this);
+
+      // Start a subscriber to listen to pose messages
+      pose_sub = n.subscribe(pose_topic, 1, &RacecarSimulator::pose_callback, this);
+      pose_rviz_sub = n.subscribe(pose_rviz_topic, 1, &RacecarSimulator::pose_rviz_callback, this);
     }
 
     void update_pose(const ros::TimerEvent&) {
@@ -142,8 +162,8 @@ class RacecarSimulator {
       geometry_msgs::TransformStamped ts;
       ts.transform = t;
       ts.header.stamp = timestamp;
-      ts.header.frame_id = "map";
-      ts.child_frame_id = "base_link";
+      ts.header.frame_id = map_frame;
+      ts.child_frame_id = base_frame;
 
       // Publish it
       br.sendTransform(ts);
@@ -152,13 +172,13 @@ class RacecarSimulator {
       if (map_exists) {
         // Get the pose of the lidar, given the pose of base link
         // (base link is the center of the rear axle)
-        Pose2D lidar_pose;
-        lidar_pose.x = pose.x + scan_distance_to_base_link * std::cos(pose.theta);
-        lidar_pose.y = pose.y + scan_distance_to_base_link * std::sin(pose.theta);
-        lidar_pose.theta = pose.theta;
+        Pose2D scan_pose;
+        scan_pose.x = pose.x + scan_distance_to_base_link * std::cos(pose.theta);
+        scan_pose.y = pose.y + scan_distance_to_base_link * std::sin(pose.theta);
+        scan_pose.theta = pose.theta;
 
         // Compute the scan from the lidar
-        std::vector<double> scan = scan_simulator.scan(lidar_pose);
+        std::vector<double> scan = scan_simulator.scan(scan_pose);
 
         // Convert to float
         std::vector<float> scan_(scan.size());
@@ -168,7 +188,7 @@ class RacecarSimulator {
         // Publish the laser message
         sensor_msgs::LaserScan scan_msg;
         scan_msg.header.stamp = timestamp;
-        scan_msg.header.frame_id = "laser";
+        scan_msg.header.frame_id = scan_frame;
         scan_msg.angle_min = -scan_simulator.get_field_of_view()/2.;
         scan_msg.angle_max =  scan_simulator.get_field_of_view()/2.;
         scan_msg.angle_increment = scan_simulator.get_angle_increment();
@@ -183,10 +203,22 @@ class RacecarSimulator {
         scan_ts.transform.translation.x = scan_distance_to_base_link;
         scan_ts.transform.rotation.w = 1;
         scan_ts.header.stamp = timestamp;
-        scan_ts.header.frame_id = "base_link";
-        scan_ts.child_frame_id = "laser";
+        scan_ts.header.frame_id = base_frame;
+        scan_ts.child_frame_id = scan_frame;
         br.sendTransform(scan_ts);
       }
+    }
+
+    void pose_callback(const geometry_msgs::Pose & msg) {
+      pose.x = msg.position.x;
+      pose.y = msg.position.y;
+      geometry_msgs::Quaternion q = msg.orientation;
+      tf2::Quaternion quat(q.x, q.y, q.z, q.w);
+      pose.theta = tf2::impl::getYaw(quat);
+    }
+
+    void pose_rviz_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg) {
+      pose_callback(msg -> pose.pose);
     }
 
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {

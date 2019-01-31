@@ -35,3 +35,10 @@ drive_topic: "/drive"
 map_topic: "/map"
 distance_transform_topic: "/dt"
 scan_topic: "/scan"
+pose_topic: "/pose"
+pose_rviz_topic: "/initialpose"
+
+# The names of the transformation frames published to
+map_frame: "map"
+base_frame: "base_link"
+scan_frame: "laser"
