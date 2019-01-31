@@ -5,21 +5,23 @@ It can be built with ROS, or it can be used as a standalone C++ library.
 
 ## ROS
 
-### Installation
+### Dependencies
 
-Building this package with ROS requires the following packages:
+If you have ```ros-melodic-desktop``` installed, the additional dependencies you must install are:
 
-- tf2
-- tf2_ros
 - tf2_geometry_msgs
 - ackermann_msgs
-- nav_msgs
-- sensor_msgs
-- geometry_msgs
 - joy
 - map_server
 
-These are installed by default with the desktop version of ROS.
+You can install them by running:
+
+    sudo apt-get install ros-melodic-tf2-geometry-msgs ros-melodic-ackermann-msgs ros-melodic-joy ros-melodic-map-server
+
+The full list of dependencies can be found in the package.xml file.
+
+### Installation
+
 To install the simulator package, clone it into your catkin workspace:
 
     cd ~/catkin_ws/src
