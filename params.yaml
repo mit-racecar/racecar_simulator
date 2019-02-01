@@ -1,6 +1,10 @@
 # The distance between the front and
 # rear axle of the racecar
-wheelbase: 0.325
+wheelbase: 0.325 # meters
+
+# Limits on the speed and steering angle
+max_speed: 4. # meters/second
+max_steering_angle: 0.34 # radians
 
 # The rate at which the pose and the lidar publish
 update_pose_rate: 0.02
@@ -26,8 +30,7 @@ map_free_threshold: 0.3
 joy: true
 joy_speed_axis: 1
 joy_angle_axis: 2
-joy_max_speed: 2.
-joy_max_angle: 0.34
+joy_max_speed: 2. # meters/second
 
 # The names of topics to listen and publish to
 joy_topic: "/joy"

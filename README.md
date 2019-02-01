@@ -18,7 +18,7 @@ You can install them by running:
 
     sudo apt-get install ros-melodic-tf2-geometry-msgs ros-melodic-ackermann-msgs ros-melodic-joy ros-melodic-map-server
 
-The full list of dependencies can be found in the package.xml file.
+The full list of dependencies can be found in the ```package.xml``` file.
 
 ### Installation
 
@@ -68,6 +68,66 @@ The pose of the car is broadcast as a transformation between the ```map``` frame
 
 ### Parameters
 
+The parameters listed below can be modified in the ```params.yaml``` file.
+
+#### Topics
+
+```drive_topic```: The topic to listen to for autonomous driving.
+
+```joy_topic```: The topic to listen to for joystick commands.
+
+```map_topic```: The topic to listen to for maps to use for the simulated scan.
+
+```pose_topic```: The topic to listen to for instantly setting the position of the car.
+
+```pose_rviz_topic```: The topic to listen to for instantly setting the position of the car with Rviz's "2D Pose Estimate" tool.
+
+```scan_topic```: The topic to publish the simulated scan to.
+
+```distance_transform_topic```: The topic to publish a distance transform to for visualization (see the implimentation section below).
+
+#### Frames
+
+```base_link```: The frame of the car, specifically the center of the rear axle.
+
+```scan_frame```: The frame of the lidar.
+
+```map_frame```: The frame of the map.
+
+#### Simulator Parameters
+
+```update_pose_rate```: The rate at which the simulator will publish the pose of the car and simulated scan, measured in seconds. Since the dynamics of the system are evaluated analytically, this won't effect the dynamics of the system, however it will effect how often the pose of the car reflects a change in the control input.
+
+#### Car Parameters
+
+```wheelbase```: The distance between the front and rear axle of the racecar, measured in meters. As this distance grows the minimum turning radius of the car increases.
+
+```max_speed```: The maximum speed of the car in meters per second.
+
+```max_steering_angle```: The maximum steering angle of the car in radians.
+
+#### Lidar Parameters
+
+```scan_beams```: The number of beams in the scan.
+
+```scan_field_of_view```: The field of view of the lidar, measured in radians. The beams are distributed uniformly throughout this field of view with the first beam being at ```-scan_field_of_view``` and the last beam being at ```scan_field_of_view```. The center of the field of view is direction the racecar is facing.
+
+```scan_distance_to_base_link```: The distance from the lidar to the center of the rear axle (base_link), measured in meters.
+
+```scan_std_dev```: The ammount of noise applied to the lidar measuredments. The noise is gaussian and centered around the correct measurement with standard deviation ```scan_std_dev```, measured in meters.
+
+```map_free_threshold```: The probability threshold for points in the map to be considered "free". This parameter is used to determine what points the simulated scan hits and what points it passes through.
+
+#### Joystick Parameters
+
+```joy```: This boolean parameter enables the joystick if true.
+
+```joy_speed_axis```: The index of the joystick axis used to control the speed of the car. To determine this parameter it may be useful to print out the joystick messages with ```rostopic echo /joy```.
+
+```joy_angle_axis```: The index of the joystick axis used to control the angle of the car.  To determine this parameter it may be useful to print out the joystick messages with ```rostopic echo /joy```.
+
+```joy_max_speed```: The maximum speed the joystick is able to propel the car, measured in meters per second.
+
 ## C++ API
 
 ## Implementation Details
@@ -78,5 +138,4 @@ Ackermann kinematics
 ## TODO
 
 - Finish documentation
-- Add max steering angle and max speed
 - Add colision detection?

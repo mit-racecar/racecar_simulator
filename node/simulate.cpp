@@ -27,6 +27,7 @@ class RacecarSimulator {
     double steering_angle;
     double previous_seconds;
     double scan_distance_to_base_link;
+    double max_speed, max_steering_angle;
 
     // A simulator of the laser
     ScanSimulator2D scan_simulator;
@@ -34,7 +35,7 @@ class RacecarSimulator {
 
     // Joystick parameters
     int joy_speed_axis, joy_angle_axis;
-    double joy_max_speed, joy_max_angle;
+    double joy_max_speed;
 
     // A ROS node
     ros::NodeHandle n;
@@ -97,6 +98,8 @@ class RacecarSimulator {
       n.getParam("scan_std_dev", scan_std_dev);
       n.getParam("map_free_threshold", map_free_threshold);
       n.getParam("scan_distance_to_base_link", scan_distance_to_base_link);
+      n.getParam("max_speed", max_speed);
+      n.getParam("max_steering_angle", max_steering_angle);
 
       // Get joystick parameters
       bool joy;
@@ -104,7 +107,6 @@ class RacecarSimulator {
       n.getParam("joy_speed_axis", joy_speed_axis);
       n.getParam("joy_angle_axis", joy_angle_axis);
       n.getParam("joy_max_speed", joy_max_speed);
-      n.getParam("joy_max_angle", joy_max_angle);
 
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
@@ -167,7 +169,9 @@ class RacecarSimulator {
 
       // Publish it
       br.sendTransform(ts);
-      update_steering_transform(timestamp);
+      // Set the steering angle to make the wheels move
+      set_steering_angle(steering_angle, timestamp);
+
       // If we have a map, perform a scan
       if (map_exists) {
         // Get the pose of the lidar, given the pose of base link
@@ -222,18 +226,25 @@ class RacecarSimulator {
     }
 
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
-      speed = msg.drive.speed;
-      steering_angle = msg.drive.steering_angle;
-      update_steering_transform(msg.header.stamp);
+      set_speed(msg.drive.speed);
+      set_steering_angle(msg.drive.steering_angle, msg.header.stamp);
     }
 
     void joy_callback(const sensor_msgs::Joy & msg) {
-      speed          = joy_max_speed * msg.axes[joy_speed_axis];
-      steering_angle = joy_max_angle * msg.axes[joy_angle_axis];
-      update_steering_transform(msg.header.stamp);
+      set_speed(
+          joy_max_speed * msg.axes[joy_speed_axis]);
+      set_steering_angle(
+          max_steering_angle * msg.axes[joy_angle_axis],
+          msg.header.stamp);
     }
 
-    void update_steering_transform(ros::Time timestamp) {
+    void set_speed(double speed_) {
+      speed = std::min(std::max(speed_, -max_speed), max_speed);
+    }
+
+    void set_steering_angle(double steering_angle_, ros::Time timestamp) {
+      steering_angle = std::min(std::max(steering_angle_, -max_steering_angle), max_steering_angle);
+
       // Publish the steering angle
       tf2::Quaternion quat;
       quat.setEuler(0., 0., steering_angle);
