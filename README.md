@@ -25,15 +25,15 @@ The full list of dependencies can be found in the package.xml file.
 To install the simulator package, clone it into your catkin workspace:
 
     cd ~/catkin_ws/src
-    git clone racecar_simulator
-
+    git clone https://github.com/mit-racecar/racecar_simulator.git
+    
 Then run ```catkin_make``` to build it:
 
     cd ~/catkin_ws
     catkin_make
     source devel/setup.bash
 
-## Usage
+## Quick Start
 
 To run the simulator on its own, run:
 
@@ -56,6 +56,16 @@ You can use a USB joystick to drive the car around, or you can place the car man
 
 ![The racecar in a cubicle](https://raw.githubusercontent.com/mit-racecar/racecar_simulator/master/media/racecar_simulator_rviz_2.png)
 
+### ROS API
+
+To make the car drive autonomously, publish [AckermannDrive](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDrive.html) messages to the ```/drive``` topic.
+
+To instantly move the car to a new state publish [Pose](http://docs.ros.org/lunar/api/geometry_msgs/html/msg/Pose.html) messages to the ```/pose``` topic. This can be useful for scripting the car through a series of automated tests.
+
+The simulated lidar is published to the ```/scan``` topic as [LaserScan](http://docs.ros.org/melodic/api/sensor_msgs/html/msg/LaserScan.html) messages.
+
+The pose of the car is broadcast as a transformation between the ```map``` frame and the ```base_link``` frame. ```base_link``` is the center of the rear axis. The ```laser``` frame defines the frame from which the lidar scan is taken and another transform is broadcast between it and ```base_link```.
+
 ### Parameters
 
 ## C++ API
@@ -63,6 +73,7 @@ You can use a USB joystick to drive the car around, or you can place the car man
 ## Implementation Details
 
 Distance transform.
+Ackermann kinematics
 
 ## TODO
 
