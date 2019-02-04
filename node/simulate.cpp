@@ -227,7 +227,7 @@ class RacecarSimulator {
 
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
       set_speed(msg.drive.speed);
-      set_steering_angle(msg.drive.steering_angle, msg.header.stamp);
+      set_steering_angle(msg.drive.steering_angle, ros::Time::now());
     }
 
     void joy_callback(const sensor_msgs::Joy & msg) {
@@ -235,7 +235,7 @@ class RacecarSimulator {
           joy_max_speed * msg.axes[joy_speed_axis]);
       set_steering_angle(
           max_steering_angle * msg.axes[joy_angle_axis],
-          msg.header.stamp);
+          ros::Time::now());
     }
 
     void set_speed(double speed_) {

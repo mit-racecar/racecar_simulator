@@ -138,4 +138,5 @@ Ackermann kinematics
 ## TODO
 
 - Finish documentation
+- Simulate odometry and imu
 - Add colision detection?
