@@ -13,6 +13,7 @@ class ScanSimulator2D {
     // Laser settings
     int num_beams;
     double field_of_view;
+    double scan_std_dev;
     double angle_increment;
 
     // Ray tracing settings
@@ -31,6 +32,10 @@ class ScanSimulator2D {
     std::mt19937 noise_generator;
     std::normal_distribution<double> noise_dist;
 
+    // Precomputed constants
+    double origin_c;
+    double origin_s;
+
   public:
 
     ScanSimulator2D() {}
@@ -38,7 +43,7 @@ class ScanSimulator2D {
     ScanSimulator2D(
         int num_beams_, 
         double field_of_view_, 
-        double scan_std_dev, 
+        double scan_std_dev_, 
         double ray_tracing_epsilon=0.0001);
 
     void set_map(
