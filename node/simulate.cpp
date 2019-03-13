@@ -5,6 +5,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Odometry.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
@@ -76,7 +77,7 @@ class RacecarSimulator {
 
       // Get the topic names
       std::string joy_topic, drive_topic, map_topic, 
-        scan_topic, pose_topic, pose_rviz_topic;
+        scan_topic, pose_topic, pose_rviz_topic, odom_topic;
       n.getParam("joy_topic", joy_topic);
       n.getParam("drive_topic", drive_topic);
       n.getParam("map_topic", map_topic);
