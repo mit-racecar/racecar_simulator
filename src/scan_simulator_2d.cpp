@@ -26,6 +26,11 @@ ScanSimulator2D::ScanSimulator2D(
 }
 
 const std::vector<double> ScanSimulator2D::scan(const Pose2D & pose) {
+  scan(pose, scan_output.data());
+  return scan_output;
+}
+
+void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
   // Construct a pose for each beam
   Pose2D beam_pose = pose;
   beam_pose.theta -= field_of_view/2.;
@@ -40,13 +45,11 @@ const std::vector<double> ScanSimulator2D::scan(const Pose2D & pose) {
         distance += noise_dist(noise_generator);
 
     // Add the distance to the output
-    scan_output[i] = distance;
+    scan_data[i] = distance;
 
     // Increment the scan
     beam_pose.theta += angle_increment;
   }
-
-  return scan_output;
 }
 
 double ScanSimulator2D::distance_transform(const Pose2D & pose) const {

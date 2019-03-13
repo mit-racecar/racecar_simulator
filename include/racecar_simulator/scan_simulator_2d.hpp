@@ -54,6 +54,7 @@ class ScanSimulator2D {
         const Pose2D & origin,
         double free_threshold);
 
+    void scan(const Pose2D & pose, double * scan_data);
     const std::vector<double> scan(const Pose2D & pose);
 
     double distance_transform(const Pose2D & pose) const;
