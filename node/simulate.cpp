@@ -58,8 +58,9 @@ class RacecarSimulator {
     ros::Subscriber pose_sub;
     ros::Subscriber pose_rviz_sub;
 
-    // Publish a scan
+    // Publish a scan and odometry
     ros::Publisher scan_pub;
+    ros::Publisher odom_pub;
 
   public:
 
@@ -81,6 +82,7 @@ class RacecarSimulator {
       n.getParam("map_topic", map_topic);
       n.getParam("scan_topic", scan_topic);
       n.getParam("pose_topic", pose_topic);
+      n.getParam("odom_topic", odom_topic);
       n.getParam("pose_rviz_topic", pose_rviz_topic);
 
       // Get the transformation frame names
@@ -116,6 +118,9 @@ class RacecarSimulator {
 
       // Make a publisher for laser scan messages
       scan_pub = n.advertise<sensor_msgs::LaserScan>(scan_topic, 1);
+
+      // Make a publisher for odometry messages
+      odom_pub = n.advertise<nav_msgs::Odometry>(odom_topic, 1);
 
       // Start a timer to output the pose
       update_pose_timer = n.createTimer(ros::Duration(update_pose_rate), &RacecarSimulator::update_pose, this);
@@ -167,8 +172,24 @@ class RacecarSimulator {
       ts.header.frame_id = map_frame;
       ts.child_frame_id = base_frame;
 
-      // Publish it
+      // Make an odom message as well
+      nav_msgs::Odometry odom;
+      odom.header.stamp = timestamp;
+      odom.header.frame_id = map_frame;
+      odom.child_frame_id = base_frame;
+      odom.pose.pose.position.x = pose.x;
+      odom.pose.pose.position.y = pose.y;
+      odom.pose.pose.orientation.x = quat.x();
+      odom.pose.pose.orientation.y = quat.y();
+      odom.pose.pose.orientation.z = quat.z();
+      odom.pose.pose.orientation.w = quat.w();
+      odom.twist.twist.linear.x = speed;
+      odom.twist.twist.angular.z = 
+        AckermannKinematics::angular_velocity(speed, steering_angle, wheelbase);
+
+      // Publish them
       br.sendTransform(ts);
+      odom_pub.publish(odom);
       // Set the steering angle to make the wheels move
       set_steering_angle(steering_angle, timestamp);
 

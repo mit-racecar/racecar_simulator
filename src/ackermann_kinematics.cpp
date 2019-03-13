@@ -5,6 +5,13 @@
 
 using namespace racecar_simulator;
 
+double AckermannKinematics::angular_velocity(
+    double velocity,
+    double steering_angle,
+    double wheelbase) {
+  return velocity * std::tan(steering_angle) / wheelbase;
+}
+
 Pose2D AckermannKinematics::update(
     const Pose2D start, 
     double velocity, 
@@ -14,8 +21,7 @@ Pose2D AckermannKinematics::update(
 
   Pose2D end;
 
-  // dthetadt = v * tan(steering_angle)/wheelbase
-  double dthetadt = velocity * std::tan(steering_angle) / wheelbase;
+  double dthetadt = angular_velocity(velocity, steering_angle, wheelbase);
   end.theta = start.theta + dthetadt * dt;
 
   // The solution to the integral of

@@ -39,6 +39,7 @@ map_topic: "/map"
 distance_transform_topic: "/dt"
 scan_topic: "/scan"
 pose_topic: "/pose"
+odom_topic: "/odom"
 pose_rviz_topic: "/initialpose"
 
 # The names of the transformation frames published to
