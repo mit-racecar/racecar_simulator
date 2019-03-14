@@ -8,11 +8,13 @@ ScanSimulator2D::ScanSimulator2D(
     int num_beams_, 
     double field_of_view_, 
     double scan_std_dev_, 
-    double ray_tracing_epsilon_) 
+    double ray_tracing_epsilon_,
+    int theta_distcretization_) 
   : num_beams(num_beams_),
     field_of_view(field_of_view_),
     scan_std_dev(scan_std_dev_),
-    ray_tracing_epsilon(ray_tracing_epsilon_)
+    ray_tracing_epsilon(ray_tracing_epsilon_),
+    theta_discretization(theta_distcretization_)
 {
   // Initialize laser settings
   angle_increment = field_of_view/(num_beams - 1);
@@ -23,6 +25,17 @@ ScanSimulator2D::ScanSimulator2D(
   // Initialize the noise
   noise_generator = std::mt19937(std::random_device{}());
   noise_dist = std::normal_distribution<double>(0., scan_std_dev);
+
+  // Precompute sines and cosines
+  if (theta_discretization > 0) {
+    sines = std::vector<double>(theta_discretization + 1);
+    cosines = std::vector<double>(theta_discretization + 1);
+    for (int i = 0; i <= theta_distcretization_; i++) {
+      double theta = (2 * M_PI * i)/((double) theta_discretization);
+      sines[i] = std::sin(theta);
+      cosines[i] = std::cos(theta);
+    }
+  }
 }
 
 const std::vector<double> ScanSimulator2D::scan(const Pose2D & pose) {
@@ -34,6 +47,9 @@ void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
   // Construct a pose for each beam
   Pose2D beam_pose = pose;
   beam_pose.theta -= field_of_view/2.;
+  // Make theta in the range [0, 2pi]
+  beam_pose.theta = std::fmod(beam_pose.theta, 2 * M_PI);
+  while (beam_pose.theta < 0) beam_pose.theta += 2 * M_PI;
 
   // Sweep through each beam
   for (int i = 0; i < num_beams; i++) {
@@ -80,8 +96,18 @@ double ScanSimulator2D::distance_transform(const Pose2D & pose) const {
 double ScanSimulator2D::trace_ray(const Pose2D & pose) const {
   // Perform ray marching
   Pose2D p = pose;
-  double c = std::cos(p.theta);
-  double s = std::sin(p.theta);
+  double s, c;
+  if (theta_discretization > 0) {
+    // Make sure theta is in the range [0, 2pi]
+    while (p.theta > 2 * M_PI) p.theta -= 2 * M_PI;
+    // Discretize
+    int theta_index = std::round((theta_discretization * p.theta)/(2 * M_PI));
+    s = sines[theta_index];
+    c = cosines[theta_index];
+  } else {
+    s = std::sin(p.theta);
+    c = std::cos(p.theta);
+  }
 
   double distance_to_nearest = distance_transform(p);
   double total_distance = distance_to_nearest;

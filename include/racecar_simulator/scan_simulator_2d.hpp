@@ -35,6 +35,9 @@ class ScanSimulator2D {
     // Precomputed constants
     double origin_c;
     double origin_s;
+    int theta_discretization;
+    std::vector<double> sines;
+    std::vector<double> cosines;
 
   public:
 
@@ -44,7 +47,8 @@ class ScanSimulator2D {
         int num_beams_, 
         double field_of_view_, 
         double scan_std_dev_, 
-        double ray_tracing_epsilon=0.0001);
+        double ray_tracing_epsilon=0.0001,
+        int theta_discretization=0);
 
     void set_map(
         const std::vector<double> & map, 
