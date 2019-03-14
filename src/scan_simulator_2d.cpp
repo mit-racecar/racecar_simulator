@@ -43,24 +43,22 @@ const std::vector<double> ScanSimulator2D::scan(const Pose2D & pose) {
 }
 
 void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
-  // Convert where in our discretized array we are
+  // Make theta discrete by mapping the range [-pi,pi] onto [0, theta_discretization)
   double theta_index = 
     theta_discretization * (pose.theta - field_of_view/2.)/(2 * M_PI);
-  // Make sure it is wrapped properly in the range [0, theta_discretization)
+
+  // Make sure it is wrapped properly
   theta_index = std::fmod(theta_index, theta_discretization);
   while (theta_index < 0) theta_index += theta_discretization;
 
   // Sweep through each beam
   for (int i = 0; i < num_beams; i++) {
     // Compute the distance to the nearest point
-    double distance = trace_ray(pose.x, pose.y, theta_index);
+    scan_data[i] = trace_ray(pose.x, pose.y, theta_index);
 
     // Add Gaussian noise to the ray trace
     if (scan_std_dev > 0)
-        distance += noise_dist(noise_generator);
-
-    // Add the distance to the output
-    scan_data[i] = distance;
+        scan_data[i] += noise_dist(noise_generator);
 
     // Increment the scan
     theta_index += theta_index_increment;
@@ -68,6 +66,30 @@ void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
     while (theta_index >= theta_discretization) 
       theta_index -= theta_discretization;
   }
+}
+
+double ScanSimulator2D::trace_ray(double x, double y, double theta_index) const {
+  // Add 0.5 to make this operation round rather than floor
+  int theta_index_ = theta_index + 0.5;
+  double s = sines[theta_index_];
+  double c = cosines[theta_index_];
+
+  // Initialize the distance to the nearest obstacle
+  double distance_to_nearest = distance_transform(x, y);
+  double total_distance = distance_to_nearest;
+
+  while (distance_to_nearest > ray_tracing_epsilon) {
+    // Move in the direction of the ray
+    // by distance_to_nearest
+    x += distance_to_nearest * c;
+    y += distance_to_nearest * s;
+    
+    // Compute the nearest distance at that point
+    distance_to_nearest = distance_transform(x, y);
+    total_distance += distance_to_nearest;
+  }
+
+  return total_distance;
 }
 
 double ScanSimulator2D::distance_transform(double x, double y) const {
@@ -93,29 +115,6 @@ double ScanSimulator2D::distance_transform(double x, double y) const {
   size_t cell = row * width + col;
 
   return dt[cell];
-}
-
-double ScanSimulator2D::trace_ray(double x, double y, double theta_index) const {
-  // Add 0.5 because it is equivalent to rounding
-  int theta_index_ = theta_index + 0.5;
-  double s = sines[theta_index_];
-  double c = cosines[theta_index_];
-
-  double distance_to_nearest = distance_transform(x, y);
-  double total_distance = distance_to_nearest;
-
-  while (distance_to_nearest > ray_tracing_epsilon) {
-    // Move in the direction of the ray
-    // by distanceToObstacle
-    x += distance_to_nearest * c;
-    y += distance_to_nearest * s;
-    
-    // Compute the nearest distance at that point
-    distance_to_nearest = distance_transform(x, y);
-    total_distance += distance_to_nearest;
-  }
-
-  return total_distance;
 }
 
 void ScanSimulator2D::set_map(
