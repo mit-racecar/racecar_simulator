@@ -36,6 +36,7 @@ class ScanSimulator2D {
     double origin_c;
     double origin_s;
     int theta_discretization;
+    double theta_index_increment;
     std::vector<double> sines;
     std::vector<double> cosines;
 
@@ -48,7 +49,7 @@ class ScanSimulator2D {
         double field_of_view_, 
         double scan_std_dev_, 
         double ray_tracing_epsilon=0.0001,
-        int theta_discretization=0);
+        int theta_discretization=2000);
 
     void set_map(
         const std::vector<double> & map, 
@@ -61,9 +62,9 @@ class ScanSimulator2D {
     void scan(const Pose2D & pose, double * scan_data);
     const std::vector<double> scan(const Pose2D & pose);
 
-    double distance_transform(const Pose2D & pose) const;
+    double distance_transform(double x, double y) const;
 
-    double trace_ray(const Pose2D & pose) const;
+    double trace_ray(double x, double y, double theta_index) const;
 
     double get_field_of_view() const {return field_of_view;}
     double get_angle_increment() const {return angle_increment;}

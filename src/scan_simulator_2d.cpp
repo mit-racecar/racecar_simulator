@@ -9,12 +9,12 @@ ScanSimulator2D::ScanSimulator2D(
     double field_of_view_, 
     double scan_std_dev_, 
     double ray_tracing_epsilon_,
-    int theta_distcretization_) 
+    int theta_discretization) 
   : num_beams(num_beams_),
     field_of_view(field_of_view_),
     scan_std_dev(scan_std_dev_),
     ray_tracing_epsilon(ray_tracing_epsilon_),
-    theta_discretization(theta_distcretization_)
+    theta_discretization(theta_discretization)
 {
   // Initialize laser settings
   angle_increment = field_of_view/(num_beams - 1);
@@ -27,14 +27,13 @@ ScanSimulator2D::ScanSimulator2D(
   noise_dist = std::normal_distribution<double>(0., scan_std_dev);
 
   // Precompute sines and cosines
-  if (theta_discretization > 0) {
-    sines = std::vector<double>(theta_discretization + 1);
-    cosines = std::vector<double>(theta_discretization + 1);
-    for (int i = 0; i <= theta_distcretization_; i++) {
-      double theta = (2 * M_PI * i)/((double) theta_discretization);
-      sines[i] = std::sin(theta);
-      cosines[i] = std::cos(theta);
-    }
+  theta_index_increment = theta_discretization * angle_increment/(2 * M_PI);
+  sines = std::vector<double>(theta_discretization + 1);
+  cosines = std::vector<double>(theta_discretization + 1);
+  for (int i = 0; i <= theta_discretization; i++) {
+    double theta = (2 * M_PI * i)/((double) theta_discretization);
+    sines[i] = std::sin(theta);
+    cosines[i] = std::cos(theta);
   }
 }
 
@@ -44,17 +43,17 @@ const std::vector<double> ScanSimulator2D::scan(const Pose2D & pose) {
 }
 
 void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
-  // Construct a pose for each beam
-  Pose2D beam_pose = pose;
-  beam_pose.theta -= field_of_view/2.;
-  // Make theta in the range [0, 2pi]
-  beam_pose.theta = std::fmod(beam_pose.theta, 2 * M_PI);
-  while (beam_pose.theta < 0) beam_pose.theta += 2 * M_PI;
+  // Convert where in our discretized array we are
+  double theta_index = 
+    theta_discretization * (pose.theta - field_of_view/2.)/(2 * M_PI);
+  // Make sure it is wrapped properly in the range [0, theta_discretization)
+  theta_index = std::fmod(theta_index, theta_discretization);
+  while (theta_index < 0) theta_index += theta_discretization;
 
   // Sweep through each beam
   for (int i = 0; i < num_beams; i++) {
     // Compute the distance to the nearest point
-    double distance = trace_ray(beam_pose);
+    double distance = trace_ray(pose.x, pose.y, theta_index);
 
     // Add Gaussian noise to the ray trace
     if (scan_std_dev > 0)
@@ -64,16 +63,19 @@ void ScanSimulator2D::scan(const Pose2D & pose, double * scan_data) {
     scan_data[i] = distance;
 
     // Increment the scan
-    beam_pose.theta += angle_increment;
+    theta_index += theta_index_increment;
+    // Make sure it stays in the range [0, theta_discretization)
+    while (theta_index >= theta_discretization) 
+      theta_index -= theta_discretization;
   }
 }
 
-double ScanSimulator2D::distance_transform(const Pose2D & pose) const {
+double ScanSimulator2D::distance_transform(double x, double y) const {
   // Convert the pose to a grid cell
 
   // Translate the state by the origin
-  double x_trans = pose.x - origin.x;
-  double y_trans = pose.y - origin.y;
+  double x_trans = x - origin.x;
+  double y_trans = y - origin.y;
 
   // Rotate the state into the map
   double x_rot =   x_trans * origin_c + y_trans * origin_s;
@@ -93,33 +95,23 @@ double ScanSimulator2D::distance_transform(const Pose2D & pose) const {
   return dt[cell];
 }
 
-double ScanSimulator2D::trace_ray(const Pose2D & pose) const {
-  // Perform ray marching
-  Pose2D p = pose;
-  double s, c;
-  if (theta_discretization > 0) {
-    // Make sure theta is in the range [0, 2pi]
-    while (p.theta > 2 * M_PI) p.theta -= 2 * M_PI;
-    // Discretize
-    int theta_index = std::round((theta_discretization * p.theta)/(2 * M_PI));
-    s = sines[theta_index];
-    c = cosines[theta_index];
-  } else {
-    s = std::sin(p.theta);
-    c = std::cos(p.theta);
-  }
+double ScanSimulator2D::trace_ray(double x, double y, double theta_index) const {
+  // Add 0.5 because it is equivalent to rounding
+  int theta_index_ = theta_index + 0.5;
+  double s = sines[theta_index_];
+  double c = cosines[theta_index_];
 
-  double distance_to_nearest = distance_transform(p);
+  double distance_to_nearest = distance_transform(x, y);
   double total_distance = distance_to_nearest;
 
   while (distance_to_nearest > ray_tracing_epsilon) {
     // Move in the direction of the ray
     // by distanceToObstacle
-    p.x += distance_to_nearest * c;
-    p.y += distance_to_nearest * s;
+    x += distance_to_nearest * c;
+    y += distance_to_nearest * s;
     
     // Compute the nearest distance at that point
-    distance_to_nearest = distance_transform(p);
+    distance_to_nearest = distance_transform(x, y);
     total_distance += distance_to_nearest;
   }
 
