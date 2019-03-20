@@ -55,10 +55,8 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
   catkin_package(
       INCLUDE_DIRS include
       LIBRARIES ${PROJECT_NAME}
-      DEPS ${DEPS}
   )
   set(LIBS ${LIBS} ${catkin_LIBRARIES})
-  set(DEPS ${DEPS} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
   include_directories(include ${catkin_INCLUDE_DIRS})
 
   # Add the nodes

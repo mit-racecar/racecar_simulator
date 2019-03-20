@@ -37,10 +37,10 @@ class ScanSimulator2D {
     double origin_s;
     int theta_discretization;
     double theta_index_increment;
-    std::vector<double> sines;
-    std::vector<double> cosines;
 
   public:
+    std::vector<double> sines;
+    std::vector<double> cosines;
 
     ScanSimulator2D() {}
 
@@ -65,6 +65,10 @@ class ScanSimulator2D {
     double distance_transform(double x, double y) const;
 
     double trace_ray(double x, double y, double theta_index) const;
+
+    void xy_to_row_col(double x, double y, int * row, int * col) const;
+    int row_col_to_cell(int row, int col) const;
+    int xy_to_cell(double x, double y) const;
 
     double get_field_of_view() const {return field_of_view;}
     double get_angle_increment() const {return angle_increment;}

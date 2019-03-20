@@ -94,25 +94,8 @@ double ScanSimulator2D::trace_ray(double x, double y, double theta_index) const 
 
 double ScanSimulator2D::distance_transform(double x, double y) const {
   // Convert the pose to a grid cell
-
-  // Translate the state by the origin
-  double x_trans = x - origin.x;
-  double y_trans = y - origin.y;
-
-  // Rotate the state into the map
-  double x_rot =   x_trans * origin_c + y_trans * origin_s;
-  double y_rot = - x_trans * origin_s + y_trans * origin_c;
-
-  // Clip the state to be a cell
-  if (x_rot < 0 or x_rot >= width * resolution) return 0;
-  if (y_rot < 0 or y_rot >= height * resolution) return 0;
-
-  // Discretize the state into row and column
-  size_t col = std::floor(x_rot/resolution);
-  size_t row = std::floor(y_rot/resolution);
-
-  // Convert into a cell
-  size_t cell = row * width + col;
+  int cell = xy_to_cell(x, y);
+  if (cell < 0) return 0;
 
   return dt[cell];
 }
@@ -144,3 +127,35 @@ void ScanSimulator2D::set_map(
   }
   DistanceTransform::distance_2d(dt, width, height, resolution);
 }
+
+void ScanSimulator2D::xy_to_row_col(double x, double y, int * row, int * col) const {
+  // Translate the state by the origin
+  double x_trans = x - origin.x;
+  double y_trans = y - origin.y;
+
+  // Rotate the state into the map
+  double x_rot =   x_trans * origin_c + y_trans * origin_s;
+  double y_rot = - x_trans * origin_s + y_trans * origin_c;
+
+  // Clip the state to be a cell
+  if (x_rot < 0 or x_rot >= width * resolution or
+      y_rot < 0 or y_rot >= height * resolution) {
+    *col = -1;
+    *row = -1;
+  } else {
+    // Discretize the state into row and column
+    *col = std::floor(x_rot/resolution);
+    *row = std::floor(y_rot/resolution);
+  }
+}
+
+int ScanSimulator2D::row_col_to_cell(int row, int col) const {
+  return row * width + col;
+}
+
+int ScanSimulator2D::xy_to_cell(double x, double y) const {
+  int row, col;
+  xy_to_row_col(x, y, &row, &col);
+  return row_col_to_cell(row, col);
+}
+
