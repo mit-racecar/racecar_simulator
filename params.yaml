@@ -46,3 +46,6 @@ pose_rviz_topic: "/initialpose"
 map_frame: "map"
 base_frame: "base_link"
 scan_frame: "laser"
+
+# Turn this off for mapping
+broadcast_transform: true

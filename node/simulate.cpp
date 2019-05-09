@@ -59,7 +59,8 @@ class RacecarSimulator {
     ros::Subscriber pose_sub;
     ros::Subscriber pose_rviz_sub;
 
-    // Publish a scan and odometry
+    // Publish a scan, odometry, and imu data
+    bool broadcast_transform;
     ros::Publisher scan_pub;
     ros::Publisher odom_pub;
 
@@ -110,6 +111,9 @@ class RacecarSimulator {
       n.getParam("joy_speed_axis", joy_speed_axis);
       n.getParam("joy_angle_axis", joy_angle_axis);
       n.getParam("joy_max_speed", joy_max_speed);
+
+      // Determine if we should broadcast
+      n.getParam("broadcast_transform", broadcast_transform);
 
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
@@ -189,7 +193,7 @@ class RacecarSimulator {
         AckermannKinematics::angular_velocity(speed, steering_angle, wheelbase);
 
       // Publish them
-      br.sendTransform(ts);
+      if (broadcast_transform) br.sendTransform(ts);
       odom_pub.publish(odom);
       // Set the steering angle to make the wheels move
       set_steering_angle(steering_angle, timestamp);
