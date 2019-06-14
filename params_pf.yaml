@@ -1,0 +1,51 @@
+# The distance between the front and
+# rear axle of the racecar
+wheelbase: 0.325 # meters
+
+# Limits on the speed and steering angle
+max_speed: 4. # meters/second
+max_steering_angle: 0.34 # radians
+
+# The rate at which the pose and the lidar publish
+update_pose_rate: 0.001
+
+# Lidar simulation parameters
+scan_beams: 1080
+scan_field_of_view: 4.71 # radians
+
+# The distance from the center of the
+# rear axis (base_link) to the lidar
+scan_distance_to_base_link: 0.275 # meters
+
+# The standard deviation of the noise applied
+# to the lidar simulation
+scan_std_dev: 0.01 # meters
+
+# The probability threshold for points
+# in the occupancy grid to be considered "free".
+# Used for the lidar simulator.
+map_free_threshold: 0.3
+
+# Enables joystick if true
+joy: false
+joy_speed_axis: 1
+joy_angle_axis: 2
+joy_max_speed: 2. # meters/second
+
+# The names of topics to listen and publish to
+joy_topic: "/joy"
+drive_topic: "/drive"
+map_topic: "/map"
+distance_transform_topic: "/dt"
+scan_topic: "/scan"
+pose_topic: "/pose"
+odom_topic: "/odom"
+pose_rviz_topic: "/initialpose"
+
+# The names of the transformation frames published to
+map_frame: "map"
+base_frame: "base_link"
+scan_frame: "laser"
+
+# Turn this off for mapping
+broadcast_transform: true

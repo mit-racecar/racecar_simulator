@@ -10,7 +10,7 @@ max_steering_angle: 0.34 # radians
 update_pose_rate: 0.02
 
 # Lidar simulation parameters
-scan_beams: 100
+scan_beams: 1080
 scan_field_of_view: 4.71 # radians
 
 # The distance from the center of the
@@ -27,7 +27,7 @@ scan_std_dev: 0.01 # meters
 map_free_threshold: 0.3
 
 # Enables joystick if true
-joy: true
+joy: false
 joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
@@ -41,6 +41,7 @@ scan_topic: "/scan"
 pose_topic: "/pose"
 odom_topic: "/odom"
 pose_rviz_topic: "/initialpose"
+collision_topic: "/collision"
 
 # The names of the transformation frames published to
 map_frame: "map"

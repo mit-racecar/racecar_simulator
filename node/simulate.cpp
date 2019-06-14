@@ -1,18 +1,32 @@
 #include <ros/ros.h>
 
+// #include <opencv2/core/eigen.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
 #include <tf2/impl/utils.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <ackermann_msgs/AckermannDriveStamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
+#include <std_msgs/Bool.h>
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+
 #include "racecar_simulator/pose_2d.hpp"
 #include "racecar_simulator/ackermann_kinematics.hpp"
 #include "racecar_simulator/scan_simulator_2d.hpp"
+
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
+#include <iostream>
 
 using namespace racecar_simulator;
 
@@ -63,10 +77,20 @@ class RacecarSimulator {
     bool broadcast_transform;
     ros::Publisher scan_pub;
     ros::Publisher odom_pub;
+    // ros::Publisher img_pub;
+    ros::Publisher collision_pub;
+
+    // eroded map for collision
+    cv::Mat eroded_map;
+    cv::Mat map_img;
+    int map_height, map_width, origin_x, origin_y;
+    double map_resolution;
+    image_transport::ImageTransport it;
+    image_transport::Publisher img_pub;
 
   public:
 
-    RacecarSimulator() {
+    RacecarSimulator(): it(n) {
       // Initialize the node handle
       n = ros::NodeHandle("~");
 
@@ -78,7 +102,7 @@ class RacecarSimulator {
 
       // Get the topic names
       std::string joy_topic, drive_topic, map_topic, 
-        scan_topic, pose_topic, pose_rviz_topic, odom_topic;
+        scan_topic, pose_topic, pose_rviz_topic, odom_topic, collision_topic;
       n.getParam("joy_topic", joy_topic);
       n.getParam("drive_topic", drive_topic);
       n.getParam("map_topic", map_topic);
@@ -86,6 +110,7 @@ class RacecarSimulator {
       n.getParam("pose_topic", pose_topic);
       n.getParam("odom_topic", odom_topic);
       n.getParam("pose_rviz_topic", pose_rviz_topic);
+      n.getParam("collision_topic", collision_topic);
 
       // Get the transformation frame names
       n.getParam("map_frame", map_frame);
@@ -127,6 +152,12 @@ class RacecarSimulator {
       // Make a publisher for odometry messages
       odom_pub = n.advertise<nav_msgs::Odometry>(odom_topic, 1);
 
+      // Make a publisher for image of thickened map
+      img_pub = it.advertise("eroded_map", 1);
+
+      // Make a publisher for collision boolean
+      collision_pub = n.advertise<std_msgs::Bool>(collision_topic, 1);
+
       // Start a timer to output the pose
       update_pose_timer = n.createTimer(ros::Duration(update_pose_rate), &RacecarSimulator::update_pose, this);
 
@@ -144,6 +175,63 @@ class RacecarSimulator {
       // Start a subscriber to listen to pose messages
       pose_sub = n.subscribe(pose_topic, 1, &RacecarSimulator::pose_callback, this);
       pose_rviz_sub = n.subscribe(pose_rviz_topic, 1, &RacecarSimulator::pose_rviz_callback, this);
+
+      // wait for one map message to get the map data array
+      boost::shared_ptr<nav_msgs::OccupancyGrid const> map_ptr;
+      nav_msgs::OccupancyGrid map_msg;
+      map_ptr = ros::topic::waitForMessage<nav_msgs::OccupancyGrid>("/map");
+      if (map_ptr != NULL) {
+        map_msg = *map_ptr;
+      }
+      std::vector<int8_t> map_data = map_msg.data;
+      // std::vector<int> map_data(map_data_raw.begin(), map_data_raw.end());
+      map_width = map_msg.info.width;
+      map_height = map_msg.info.height;
+      map_resolution = map_msg.info.resolution;
+      origin_x = map_msg.info.origin.position.x;
+      origin_y = map_msg.info.origin.position.y;
+
+      // map map data to cv mat
+      map_img = cv::Mat(map_height, map_width, CV_8UC1);
+      eroded_map = cv::Mat(map_height, map_width, CV_8UC1);
+      std::memcpy(map_img.data, map_data.data(), map_data.size()*sizeof(int8_t));
+      //erosion
+      int erosion_type = cv::MORPH_RECT;
+      int erosion_size = 20;
+      cv::Mat element = cv::getStructuringElement(erosion_type,
+                                                  cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
+                                                  cv::Point( erosion_size, erosion_size ) );
+      cv::dilate( map_img, eroded_map, element );
+      pub_image(eroded_map);
+      ROS_INFO("Simulator created.");
+    }
+
+    void pub_image(cv::Mat &img) {
+      sensor_msgs::ImagePtr img_msg;
+      if (!img.empty()) {
+        img_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
+      }
+      img_pub.publish(img_msg);
+    }
+
+    std::vector<int> coord_2_cell_rc(double x, double y) {
+      std::vector<int> rc;
+      rc.push_back(static_cast<int>((y-origin_y)/map_resolution));
+      rc.push_back(static_cast<int>((x-origin_x)/map_resolution));
+      return rc;
+    }
+
+    bool check_collision(double x, double y) {
+      std::vector<int> rc = coord_2_cell_rc(x, y);
+      int val = eroded_map.at<int>(rc[0], rc[1]);
+      // ROS_INFO("current row: %d, current col: %d, current_val: %d", rc[0], rc[1], val);
+      std::cout << val << std::endl;
+      std_msgs::Bool bool_msg;
+      bool_msg.data = (val!=0);
+      collision_pub.publish(bool_msg);
+      pub_image(eroded_map);
+      // if (val!=0) ROS_INFO("collision");
+      return (val!=0);
     }
 
     void update_pose(const ros::TimerEvent&) {
@@ -169,6 +257,9 @@ class RacecarSimulator {
       t.rotation.y = quat.y();
       t.rotation.z = quat.z();
       t.rotation.w = quat.w();
+
+      // check collision
+      if (check_collision(pose.x, pose.y)) set_speed(0);
 
       // Add a header to the transformation
       geometry_msgs::TransformStamped ts;
@@ -239,16 +330,19 @@ class RacecarSimulator {
       }
     }
 
-    void pose_callback(const geometry_msgs::Pose & msg) {
-      pose.x = msg.position.x;
-      pose.y = msg.position.y;
-      geometry_msgs::Quaternion q = msg.orientation;
+    void pose_callback(const geometry_msgs::PoseStamped & msg) {
+      pose.x = msg.pose.position.x;
+      pose.y = msg.pose.position.y;
+      geometry_msgs::Quaternion q = msg.pose.orientation;
       tf2::Quaternion quat(q.x, q.y, q.z, q.w);
       pose.theta = tf2::impl::getYaw(quat);
     }
 
     void pose_rviz_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg) {
-      pose_callback(msg -> pose.pose);
+      geometry_msgs::PoseStamped temp_pose;
+      temp_pose.header = msg->header;
+      temp_pose.pose = msg->pose.pose;
+      pose_callback(temp_pose);
     }
 
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {

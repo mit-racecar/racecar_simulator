@@ -11,6 +11,8 @@ endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+find_package(OpenCV)
+find_package(Eigen3)
 
 ######################################
 # Compile the library >
@@ -49,6 +51,8 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     geometry_msgs
+    cv_bridge
+    image_transport
     )
 
   # Include catkin_libraries
