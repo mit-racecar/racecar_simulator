@@ -79,18 +79,17 @@ class RacecarSimulator {
     ros::Publisher odom_pub;
     // ros::Publisher img_pub;
     ros::Publisher collision_pub;
+    ros::Publisher eroded_pub;
 
     // eroded map for collision
-    cv::Mat eroded_map;
-    cv::Mat map_img;
-    int map_height, map_width, origin_x, origin_y;
-    double map_resolution;
-    image_transport::ImageTransport it;
-    image_transport::Publisher img_pub;
+    std::vector<int> eroded_map;
+    int map_width, map_height, inflation_size;
+    double map_resolution, origin_x, origin_y;
+    nav_msgs::OccupancyGrid eroded_map_msg;
 
   public:
 
-    RacecarSimulator(): it(n) {
+    RacecarSimulator() {
       // Initialize the node handle
       n = ros::NodeHandle("~");
 
@@ -102,7 +101,7 @@ class RacecarSimulator {
 
       // Get the topic names
       std::string joy_topic, drive_topic, map_topic, 
-        scan_topic, pose_topic, pose_rviz_topic, odom_topic, collision_topic;
+        scan_topic, pose_topic, pose_rviz_topic, odom_topic, collision_topic, eroded_topic;
       n.getParam("joy_topic", joy_topic);
       n.getParam("drive_topic", drive_topic);
       n.getParam("map_topic", map_topic);
@@ -110,6 +109,7 @@ class RacecarSimulator {
       n.getParam("pose_topic", pose_topic);
       n.getParam("odom_topic", odom_topic);
       n.getParam("pose_rviz_topic", pose_rviz_topic);
+      n.getParam("eroded_map_topic", eroded_topic);
       n.getParam("collision_topic", collision_topic);
 
       // Get the transformation frame names
@@ -140,6 +140,9 @@ class RacecarSimulator {
       // Determine if we should broadcast
       n.getParam("broadcast_transform", broadcast_transform);
 
+      // Get map-based collision parameters
+      n.getParam("inflation_size", inflation_size);
+
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
           scan_beams,
@@ -152,11 +155,11 @@ class RacecarSimulator {
       // Make a publisher for odometry messages
       odom_pub = n.advertise<nav_msgs::Odometry>(odom_topic, 1);
 
-      // Make a publisher for image of thickened map
-      img_pub = it.advertise("eroded_map", 1);
-
       // Make a publisher for collision boolean
       collision_pub = n.advertise<std_msgs::Bool>(collision_topic, 1);
+
+      // Make a publisher for publishing eroded map
+      eroded_pub = n.advertise<nav_msgs::OccupancyGrid>(eroded_topic, 1);
 
       // Start a timer to output the pose
       update_pose_timer = n.createTimer(ros::Duration(update_pose_rate), &RacecarSimulator::update_pose, this);
@@ -183,35 +186,45 @@ class RacecarSimulator {
       if (map_ptr != NULL) {
         map_msg = *map_ptr;
       }
-      std::vector<int8_t> map_data = map_msg.data;
-      // std::vector<int> map_data(map_data_raw.begin(), map_data_raw.end());
+      std::vector<int8_t> map_data_raw = map_msg.data;
+      std::vector<int> map_data(map_data_raw.begin(), map_data_raw.end());
+      
       map_width = map_msg.info.width;
       map_height = map_msg.info.height;
-      map_resolution = map_msg.info.resolution;
       origin_x = map_msg.info.origin.position.x;
       origin_y = map_msg.info.origin.position.y;
+      map_resolution = map_msg.info.resolution;
 
-      // map map data to cv mat
-      map_img = cv::Mat(map_height, map_width, CV_8UC1);
-      eroded_map = cv::Mat(map_height, map_width, CV_8UC1);
-      std::memcpy(map_img.data, map_data.data(), map_data.size()*sizeof(int8_t));
-      //erosion
-      int erosion_type = cv::MORPH_RECT;
-      int erosion_size = 20;
-      cv::Mat element = cv::getStructuringElement(erosion_type,
-                                                  cv::Size( 2*erosion_size + 1, 2*erosion_size+1 ),
-                                                  cv::Point( erosion_size, erosion_size ) );
-      cv::dilate( map_img, eroded_map, element );
-      pub_image(eroded_map);
+      
+      eroded_map = std::vector<int>(map_data.begin(), map_data.end());
+      for (int i=0; i<eroded_map.size(); i++) {
+        if (map_data[i] != 0) {
+          std::vector<int> current_rc = ind_2_rc(i);
+          for (int infl_r=-inflation_size; infl_r<inflation_size; infl_r++) {
+            for (int infl_c=-inflation_size; infl_c<inflation_size; infl_c++) {
+              eroded_map[rc_2_ind(current_rc[0]+infl_r, current_rc[1]+infl_c)] = 100;
+            }
+          }
+        }
+      }
+      eroded_map_msg.header = map_msg.header;
+      eroded_map_msg.data = std::vector<int8_t>(eroded_map.begin(), eroded_map.end());
+      eroded_pub.publish(eroded_map_msg);
+
       ROS_INFO("Simulator created.");
     }
 
-    void pub_image(cv::Mat &img) {
-      sensor_msgs::ImagePtr img_msg;
-      if (!img.empty()) {
-        img_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", img).toImageMsg();
-      }
-      img_pub.publish(img_msg);
+    std::vector<int> ind_2_rc(int ind) {
+      std::vector<int> rc;
+      int row = floor(ind/map_width);
+      int col = ind%map_width - 1;
+      rc.push_back(row);
+      rc.push_back(col);
+      return rc;
+    }
+
+    int rc_2_ind(int r, int c) {
+      return r*map_width + c;
     }
 
     std::vector<int> coord_2_cell_rc(double x, double y) {
@@ -223,14 +236,13 @@ class RacecarSimulator {
 
     bool check_collision(double x, double y) {
       std::vector<int> rc = coord_2_cell_rc(x, y);
-      int val = eroded_map.at<int>(rc[0], rc[1]);
+      int val = eroded_map[rc_2_ind(rc[0], rc[1])];
       // ROS_INFO("current row: %d, current col: %d, current_val: %d", rc[0], rc[1], val);
-      std::cout << val << std::endl;
       std_msgs::Bool bool_msg;
       bool_msg.data = (val!=0);
       collision_pub.publish(bool_msg);
-      pub_image(eroded_map);
-      // if (val!=0) ROS_INFO("collision");
+      if (val!=0) ROS_INFO("collision");
+      eroded_pub.publish(eroded_map_msg);
       return (val!=0);
     }
 

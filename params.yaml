@@ -7,7 +7,7 @@ max_speed: 4. # meters/second
 max_steering_angle: 0.34 # radians
 
 # The rate at which the pose and the lidar publish
-update_pose_rate: 0.02
+update_pose_rate: 0.001
 
 # Lidar simulation parameters
 scan_beams: 1080
@@ -32,6 +32,9 @@ joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
 
+# map-collision parameters
+inflation_size: 10
+
 # The names of topics to listen and publish to
 joy_topic: "/joy"
 drive_topic: "/drive"
@@ -41,6 +44,7 @@ scan_topic: "/scan"
 pose_topic: "/pose"
 odom_topic: "/odom"
 pose_rviz_topic: "/initialpose"
+eroded_map_topic: "/eroded_map"
 collision_topic: "/collision"
 
 # The names of the transformation frames published to
