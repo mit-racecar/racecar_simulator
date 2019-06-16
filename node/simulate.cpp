@@ -240,12 +240,13 @@ class RacecarSimulator {
 
       // create buttons for clearing obstacles, and spawning a new car
       visualization_msgs::InteractiveMarker clear_obs_button;
-      clear_obs_button.header.frame_id = "/map";
+      clear_obs_button.header.frame_id = "map";
       // clear_obs_button.pose.position.x = origin_x+(1/3)*map_width*map_resolution;
       // clear_obs_button.pose.position.y = origin_y+(1/3)*map_height*map_resolution;
-      clear_obs_button.pose.position.x = -51;
-      clear_obs_button.pose.position.y = -51;
-      clear_obs_button.scale = 10;
+      // TODO: find better positioning of buttons
+      clear_obs_button.pose.position.x = 0;
+      clear_obs_button.pose.position.y = -12;
+      clear_obs_button.scale = 1;
       clear_obs_button.name = "clear_obstacles";
       clear_obs_button.description = "Clear Obstacles\n(Left Click)";
       visualization_msgs::InteractiveMarkerControl clear_obs_control;
@@ -257,9 +258,9 @@ class RacecarSimulator {
       clear_obs_marker.scale.x = clear_obs_button.scale*0.45;
       clear_obs_marker.scale.y = clear_obs_button.scale*0.45;
       clear_obs_marker.scale.z = clear_obs_button.scale*0.45;
-      clear_obs_marker.color.r = 0.5;
-      clear_obs_marker.color.g = 0.5;
-      clear_obs_marker.color.b = 0.5;
+      clear_obs_marker.color.r = 0.0;
+      clear_obs_marker.color.g = 1.0;
+      clear_obs_marker.color.b = 0.0;
       clear_obs_marker.color.a = 1.0;
 
       clear_obs_control.markers.push_back(clear_obs_marker);
@@ -268,6 +269,7 @@ class RacecarSimulator {
 
       im_server.insert(clear_obs_button);
       im_server.setCallback(clear_obs_button.name, boost::bind(&RacecarSimulator::clear_obstacles, this, _1));
+      im_server.applyChanges();
 
       ROS_INFO("Simulator created.");
     }
@@ -452,6 +454,7 @@ class RacecarSimulator {
     }
 
     void clear_obstacles(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+      ROS_INFO("Clearing obstacles.");
       current_map = original_map;
       map_pub.publish(current_map);
       eroded_map = original_eroded_map;
