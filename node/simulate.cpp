@@ -1,8 +1,7 @@
 #include <ros/ros.h>
 
-// #include <opencv2/core/eigen.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
-#include <opencv2/highgui/highgui.hpp>
+// interactive marker
+#include <interactive_markers/interactive_marker_server.h>
 
 #include <tf2/impl/utils.h>
 #include <tf2/LinearMath/Quaternion.h>
@@ -41,6 +40,9 @@ class RacecarSimulator {
     // listen for clicked point for adding obstacles
     ros::Subscriber obs_sub;
     int obstacle_size;
+
+    // interactive markers' server
+    interactive_markers::InteractiveMarkerServer im_server;
 
     // The car state and parameters
     Pose2D pose;
@@ -96,13 +98,14 @@ class RacecarSimulator {
 
     // eroded map for collision
     std::vector<int> eroded_map;
+    std::vector<int> original_eroded_map;
     int map_width, map_height, inflation_size;
     double map_resolution, origin_x, origin_y;
     nav_msgs::OccupancyGrid eroded_map_msg;
 
   public:
 
-    RacecarSimulator() {
+    RacecarSimulator(): im_server("racecar_sim") {
       // Initialize the node handle
       n = ros::NodeHandle("~");
 
@@ -218,7 +221,7 @@ class RacecarSimulator {
       origin_y = map_msg.info.origin.position.y;
       map_resolution = map_msg.info.resolution;
 
-      
+      // create underlying map for collision
       eroded_map = std::vector<int>(map_data.begin(), map_data.end());
       for (int i=0; i<eroded_map.size(); i++) {
         if (map_data[i] != 0) {
@@ -230,9 +233,41 @@ class RacecarSimulator {
           }
         }
       }
+      original_eroded_map = eroded_map;
       eroded_map_msg.header = map_msg.header;
       eroded_map_msg.data = std::vector<int8_t>(eroded_map.begin(), eroded_map.end());
       eroded_pub.publish(eroded_map_msg);
+
+      // create buttons for clearing obstacles, and spawning a new car
+      visualization_msgs::InteractiveMarker clear_obs_button;
+      clear_obs_button.header.frame_id = "/map";
+      // clear_obs_button.pose.position.x = origin_x+(1/3)*map_width*map_resolution;
+      // clear_obs_button.pose.position.y = origin_y+(1/3)*map_height*map_resolution;
+      clear_obs_button.pose.position.x = -51;
+      clear_obs_button.pose.position.y = -51;
+      clear_obs_button.scale = 10;
+      clear_obs_button.name = "clear_obstacles";
+      clear_obs_button.description = "Clear Obstacles\n(Left Click)";
+      visualization_msgs::InteractiveMarkerControl clear_obs_control;
+      clear_obs_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      clear_obs_control.name = "clear_obstacles_control";
+
+      visualization_msgs::Marker clear_obs_marker;
+      clear_obs_marker.type = visualization_msgs::Marker::CUBE;
+      clear_obs_marker.scale.x = clear_obs_button.scale*0.45;
+      clear_obs_marker.scale.y = clear_obs_button.scale*0.45;
+      clear_obs_marker.scale.z = clear_obs_button.scale*0.45;
+      clear_obs_marker.color.r = 0.5;
+      clear_obs_marker.color.g = 0.5;
+      clear_obs_marker.color.b = 0.5;
+      clear_obs_marker.color.a = 1.0;
+
+      clear_obs_control.markers.push_back(clear_obs_marker);
+      clear_obs_control.always_visible = true;
+      clear_obs_button.controls.push_back(clear_obs_control);
+
+      im_server.insert(clear_obs_button);
+      im_server.setCallback(clear_obs_button.name, boost::bind(&RacecarSimulator::clear_obstacles, this, _1));
 
       ROS_INFO("Simulator created.");
     }
@@ -410,14 +445,16 @@ class RacecarSimulator {
           int current_c = rc[1]+j;
           int current_ind = rc_2_ind(current_r, current_c);
           current_map.data[current_ind] = 100;
+          eroded_map[current_ind] = 100;
         }
       }
       map_pub.publish(current_map);
     }
 
-    void clear_obstacles() {
+    void clear_obstacles(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
       current_map = original_map;
       map_pub.publish(current_map);
+      eroded_map = original_eroded_map;
     }
 
     void set_speed(double speed_) {
