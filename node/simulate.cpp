@@ -15,6 +15,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/Joy.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include <geometry_msgs/PointStamped.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
@@ -34,6 +35,12 @@ class RacecarSimulator {
   private:
     // The transformation frames used
     std::string map_frame, base_frame, scan_frame;
+
+    // obstacle states (1D index) and parameters
+    std::vector<int> added_obs;
+    // listen for clicked point for adding obstacles
+    ros::Subscriber obs_sub;
+    int obstacle_size;
 
     // The car state and parameters
     Pose2D pose;
@@ -80,6 +87,12 @@ class RacecarSimulator {
     // ros::Publisher img_pub;
     ros::Publisher collision_pub;
     ros::Publisher eroded_pub;
+    // publisher for map with obstacles
+    ros::Publisher map_pub;
+
+    // keep an original map for obstacles
+    nav_msgs::OccupancyGrid original_map;
+    nav_msgs::OccupancyGrid current_map;
 
     // eroded map for collision
     std::vector<int> eroded_map;
@@ -143,6 +156,9 @@ class RacecarSimulator {
       // Get map-based collision parameters
       n.getParam("inflation_size", inflation_size);
 
+      // Get obstacle size parameter
+      n.getParam("obstacle_size", obstacle_size);
+
       // Initialize a simulator of the laser scanner
       scan_simulator = ScanSimulator2D(
           scan_beams,
@@ -160,6 +176,9 @@ class RacecarSimulator {
 
       // Make a publisher for publishing eroded map
       eroded_pub = n.advertise<nav_msgs::OccupancyGrid>(eroded_topic, 1);
+
+      // Make a publisher for publishing map with obstacles
+      map_pub = n.advertise<nav_msgs::OccupancyGrid>("/map", 1);
 
       // Start a timer to output the pose
       update_pose_timer = n.createTimer(ros::Duration(update_pose_rate), &RacecarSimulator::update_pose, this);
@@ -179,6 +198,8 @@ class RacecarSimulator {
       pose_sub = n.subscribe(pose_topic, 1, &RacecarSimulator::pose_callback, this);
       pose_rviz_sub = n.subscribe(pose_rviz_topic, 1, &RacecarSimulator::pose_rviz_callback, this);
 
+      obs_sub = n.subscribe("/clicked_point", 1, &RacecarSimulator::obs_callback, this);
+
       // wait for one map message to get the map data array
       boost::shared_ptr<nav_msgs::OccupancyGrid const> map_ptr;
       nav_msgs::OccupancyGrid map_msg;
@@ -186,6 +207,8 @@ class RacecarSimulator {
       if (map_ptr != NULL) {
         map_msg = *map_ptr;
       }
+      original_map = map_msg;
+      current_map = map_msg;
       std::vector<int8_t> map_data_raw = map_msg.data;
       std::vector<int> map_data(map_data_raw.begin(), map_data_raw.end());
       
@@ -342,6 +365,15 @@ class RacecarSimulator {
       }
     }
 
+    void obs_callback(const geometry_msgs::PointStamped &msg) {
+      double x = msg.point.x;
+      double y = msg.point.y;
+      std::vector<int> rc = coord_2_cell_rc(x, y);
+      int ind = rc_2_ind(rc[0], rc[1]);
+      added_obs.push_back(ind);
+      add_obs(ind);
+    }
+
     void pose_callback(const geometry_msgs::PoseStamped & msg) {
       pose.x = msg.pose.position.x;
       pose.y = msg.pose.position.y;
@@ -368,6 +400,24 @@ class RacecarSimulator {
       set_steering_angle(
           max_steering_angle * msg.axes[joy_angle_axis],
           ros::Time::now());
+    }
+
+    void add_obs(int ind) {
+      std::vector<int> rc = ind_2_rc(ind);
+      for (int i=-obstacle_size; i<obstacle_size; i++) {
+        for (int j=-obstacle_size; j<obstacle_size; j++) {
+          int current_r = rc[0]+i;
+          int current_c = rc[1]+j;
+          int current_ind = rc_2_ind(current_r, current_c);
+          current_map.data[current_ind] = 100;
+        }
+      }
+      map_pub.publish(current_map);
+    }
+
+    void clear_obstacles() {
+      current_map = original_map;
+      map_pub.publish(current_map);
     }
 
     void set_speed(double speed_) {

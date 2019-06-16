@@ -35,6 +35,9 @@ joy_max_speed: 2. # meters/second
 # map-collision parameters
 inflation_size: 5
 
+# obstacle parameters
+obstacle_size: 2
+
 # The names of topics to listen and publish to
 joy_topic: "/joy"
 drive_topic: "/drive"

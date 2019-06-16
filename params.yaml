@@ -33,7 +33,10 @@ joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
 
 # map-collision parameters
-inflation_size: 10
+inflation_size: 5
+
+# obstacle parameters
+obstacle_size: 2
 
 # The names of topics to listen and publish to
 joy_topic: "/joy"
