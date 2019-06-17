@@ -34,12 +34,19 @@ class RacecarSimulator {
   private:
     // The transformation frames used
     std::string map_frame, base_frame, scan_frame;
+    std::string op_base_frame, op_scan_frame;
 
     // obstacle states (1D index) and parameters
     std::vector<int> added_obs;
     // listen for clicked point for adding obstacles
     ros::Subscriber obs_sub;
     int obstacle_size;
+
+    // opponent state and parameters
+    bool opponent_spawned = false;
+    Pose2D opponent_pose;
+    double opponent_speed, opponent_steering_angle;
+
 
     // interactive markers' server
     interactive_markers::InteractiveMarkerServer im_server;
@@ -66,6 +73,7 @@ class RacecarSimulator {
 
     // For publishing transformations
     tf2_ros::TransformBroadcaster br;
+    tf2_ros::TransformBroadcaster op_br;
 
     // A timer to update the pose
     ros::Timer update_pose_timer;
@@ -92,6 +100,15 @@ class RacecarSimulator {
     // publisher for map with obstacles
     ros::Publisher map_pub;
 
+    // publishers for opponent car
+    ros::Publisher op_scan_pub;
+    ros::Publisher op_odom_pub;
+
+    // subscribers for opponent car
+    ros::Subscriber op_pose_sub;
+    ros::Subscriber op_pose_rviz_sub;
+    ros::Subscriber op_drive_sub;
+
     // keep an original map for obstacles
     nav_msgs::OccupancyGrid original_map;
     nav_msgs::OccupancyGrid current_map;
@@ -111,8 +128,11 @@ class RacecarSimulator {
 
       // Initialize the pose and driving commands
       pose = {.x=0, .y=0, .theta=0};
+      opponent_pose = {.x=0, .y=0, .theta=0};
       speed = 0;
+      opponent_speed = 0;
       steering_angle = 0;
+      opponent_steering_angle = 0;
       previous_seconds = ros::Time::now().toSec();
 
       // Get the topic names
@@ -128,10 +148,20 @@ class RacecarSimulator {
       n.getParam("eroded_map_topic", eroded_topic);
       n.getParam("collision_topic", collision_topic);
 
+      // Get opponent topic names
+      std::string op_scan_topic, op_drive_topic, op_pose_topic, op_odom_topic, op_pose_rviz_topic;
+      n.getParam("opponent_scan_topic", op_scan_topic);
+      n.getParam("opponent_drive_topic", op_drive_topic);
+      n.getParam("opponent_pose_topic", op_pose_topic);
+      n.getParam("opponent_pose_rviz_topic", op_pose_rviz_topic);
+      n.getParam("opponent_odom_topic", op_odom_topic);
+
       // Get the transformation frame names
       n.getParam("map_frame", map_frame);
       n.getParam("base_frame", base_frame);
       n.getParam("scan_frame", scan_frame);
+      n.getParam("opponent_base_frame", op_base_frame);
+      n.getParam("opponent_scan_frame", op_scan_frame);
 
       // Fetch the car parameters
       int scan_beams;
@@ -170,9 +200,11 @@ class RacecarSimulator {
 
       // Make a publisher for laser scan messages
       scan_pub = n.advertise<sensor_msgs::LaserScan>(scan_topic, 1);
+      op_scan_pub = n.advertise<sensor_msgs::LaserScan>(op_scan_topic, 1);
 
       // Make a publisher for odometry messages
       odom_pub = n.advertise<nav_msgs::Odometry>(odom_topic, 1);
+      op_odom_pub = n.advertise<nav_msgs::Odometry>(op_odom_topic, 1);
 
       // Make a publisher for collision boolean
       collision_pub = n.advertise<std_msgs::Bool>(collision_topic, 1);
@@ -193,13 +225,16 @@ class RacecarSimulator {
 
       // Start a subscriber to listen to drive commands
       drive_sub = n.subscribe(drive_topic, 1, &RacecarSimulator::drive_callback, this);
+      op_drive_sub = n.subscribe(op_drive_topic, 1, &RacecarSimulator::op_drive_callback, this);
 
       // Start a subscriber to listen to new maps
       map_sub = n.subscribe(map_topic, 1, &RacecarSimulator::map_callback, this);
 
       // Start a subscriber to listen to pose messages
       pose_sub = n.subscribe(pose_topic, 1, &RacecarSimulator::pose_callback, this);
+      op_pose_sub = n.subscribe(op_pose_topic, 1, &RacecarSimulator::op_pose_callback, this);
       pose_rviz_sub = n.subscribe(pose_rviz_topic, 1, &RacecarSimulator::pose_rviz_callback, this);
+      op_pose_rviz_sub = n.subscribe(op_pose_rviz_topic, 1, &RacecarSimulator::op_pose_rviz_callback, this);
 
       obs_sub = n.subscribe("/clicked_point", 1, &RacecarSimulator::obs_callback, this);
 
@@ -223,7 +258,7 @@ class RacecarSimulator {
 
       // create underlying map for collision
       eroded_map = std::vector<int>(map_data.begin(), map_data.end());
-      for (int i=0; i<eroded_map.size(); i++) {
+      for (int i=0; i<static_cast<int>(eroded_map.size()); i++) {
         if (map_data[i] != 0) {
           std::vector<int> current_rc = ind_2_rc(i);
           for (int infl_r=-inflation_size; infl_r<inflation_size; infl_r++) {
@@ -238,7 +273,7 @@ class RacecarSimulator {
       eroded_map_msg.data = std::vector<int8_t>(eroded_map.begin(), eroded_map.end());
       eroded_pub.publish(eroded_map_msg);
 
-      // create buttons for clearing obstacles, and spawning a new car
+      // create button for clearing obstacles
       visualization_msgs::InteractiveMarker clear_obs_button;
       clear_obs_button.header.frame_id = "map";
       // clear_obs_button.pose.position.x = origin_x+(1/3)*map_width*map_resolution;
@@ -252,7 +287,7 @@ class RacecarSimulator {
       visualization_msgs::InteractiveMarkerControl clear_obs_control;
       clear_obs_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
       clear_obs_control.name = "clear_obstacles_control";
-
+      // make a box for the button
       visualization_msgs::Marker clear_obs_marker;
       clear_obs_marker.type = visualization_msgs::Marker::CUBE;
       clear_obs_marker.scale.x = clear_obs_button.scale*0.45;
@@ -269,6 +304,37 @@ class RacecarSimulator {
 
       im_server.insert(clear_obs_button);
       im_server.setCallback(clear_obs_button.name, boost::bind(&RacecarSimulator::clear_obstacles, this, _1));
+
+
+      // create buttons for spawning and despawning a new car
+      visualization_msgs::InteractiveMarker spawn_car_button;
+      spawn_car_button.header.frame_id = "map";
+      spawn_car_button.pose.position.x = -2;
+      spawn_car_button.pose.position.y = -5;
+      spawn_car_button.scale = 1;
+      spawn_car_button.name = "spawn_car";
+      spawn_car_button.description = "Spawn Opponent Car\n(Left Click)";
+      visualization_msgs::InteractiveMarkerControl spawn_car_control;
+      spawn_car_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      spawn_car_control.name = "spawn_car_control";
+      // make a box for the button
+      visualization_msgs::Marker spawn_car_marker;
+      spawn_car_marker.type = visualization_msgs::Marker::CUBE;
+      spawn_car_marker.scale.x = spawn_car_button.scale*0.45;
+      spawn_car_marker.scale.y = spawn_car_button.scale*0.65;
+      spawn_car_marker.scale.z = spawn_car_button.scale*0.45;
+      spawn_car_marker.color.r = 0.0;
+      spawn_car_marker.color.g = 0.5;
+      spawn_car_marker.color.b = 0.5;
+      spawn_car_marker.color.a = 1.0;
+
+      spawn_car_control.markers.push_back(spawn_car_marker);
+      spawn_car_control.always_visible = true;
+      spawn_car_button.controls.push_back(spawn_car_control);
+
+      im_server.insert(spawn_car_button);
+      im_server.setCallback(spawn_car_button.name, boost::bind(&RacecarSimulator::spawn_car, this, _1));
+
       im_server.applyChanges();
 
       ROS_INFO("Simulator created.");
@@ -317,6 +383,12 @@ class RacecarSimulator {
           steering_angle,
           wheelbase,
           current_seconds - previous_seconds);
+      opponent_pose = AckermannKinematics::update(
+        opponent_pose,
+        opponent_speed,
+        opponent_steering_angle,
+        wheelbase,
+        current_seconds - previous_seconds);
       previous_seconds = current_seconds;
 
       // Convert the pose into a transformation
@@ -330,6 +402,16 @@ class RacecarSimulator {
       t.rotation.z = quat.z();
       t.rotation.w = quat.w();
 
+      geometry_msgs::Transform op_t;
+      op_t.translation.x = opponent_pose.x;
+      op_t.translation.y = opponent_pose.y;
+      tf2::Quaternion op_quat;
+      op_quat.setEuler(0., 0., opponent_pose.theta);
+      op_t.rotation.x = op_quat.x();
+      op_t.rotation.y = op_quat.y();
+      op_t.rotation.z = op_quat.z();
+      op_t.rotation.w = op_quat.w();
+
       // check collision
       if (check_collision(pose.x, pose.y)) set_speed(0);
 
@@ -339,6 +421,12 @@ class RacecarSimulator {
       ts.header.stamp = timestamp;
       ts.header.frame_id = map_frame;
       ts.child_frame_id = base_frame;
+
+      geometry_msgs::TransformStamped op_ts;
+      op_ts.transform = op_t;
+      op_ts.header.stamp = timestamp;
+      op_ts.header.frame_id = map_frame;
+      op_ts.child_frame_id = op_base_frame;
 
       // Make an odom message as well
       nav_msgs::Odometry odom;
@@ -355,11 +443,30 @@ class RacecarSimulator {
       odom.twist.twist.angular.z = 
         AckermannKinematics::angular_velocity(speed, steering_angle, wheelbase);
 
+      nav_msgs::Odometry op_odom;
+      op_odom.header.stamp = timestamp;
+      op_odom.header.frame_id = map_frame;
+      op_odom.child_frame_id = op_base_frame;
+      op_odom.pose.pose.position.x = opponent_pose.x;
+      op_odom.pose.pose.position.y = opponent_pose.y;
+      op_odom.pose.pose.orientation.x = op_quat.x();
+      op_odom.pose.pose.orientation.y = op_quat.y();
+      op_odom.pose.pose.orientation.z = op_quat.z();
+      op_odom.pose.pose.orientation.w = op_quat.w();
+      op_odom.twist.twist.linear.x = opponent_speed;
+      op_odom.twist.twist.angular.z = 
+        AckermannKinematics::angular_velocity(opponent_speed, opponent_steering_angle, wheelbase);
+
       // Publish them
-      if (broadcast_transform) br.sendTransform(ts);
+      if (broadcast_transform) {
+        br.sendTransform(ts);
+        op_br.sendTransform(op_ts);
+      }
       odom_pub.publish(odom);
+      op_odom_pub.publish(op_odom);
       // Set the steering angle to make the wheels move
       set_steering_angle(steering_angle, timestamp);
+      set_op_steering_angle(opponent_steering_angle, timestamp);
 
       // If we have a map, perform a scan
       if (map_exists) {
@@ -370,13 +477,23 @@ class RacecarSimulator {
         scan_pose.y = pose.y + scan_distance_to_base_link * std::sin(pose.theta);
         scan_pose.theta = pose.theta;
 
+        Pose2D op_scan_pose;
+        op_scan_pose.x = opponent_pose.x + scan_distance_to_base_link * std::cos(opponent_pose.theta);
+        op_scan_pose.y = opponent_pose.y + scan_distance_to_base_link * std::sin(opponent_pose.theta);
+        op_scan_pose.theta = opponent_pose.theta;
+
         // Compute the scan from the lidar
         std::vector<double> scan = scan_simulator.scan(scan_pose);
+        std::vector<double> op_scan = scan_simulator.scan(op_scan_pose);
 
         // Convert to float
         std::vector<float> scan_(scan.size());
         for (size_t i = 0; i < scan.size(); i++)
           scan_[i] = scan[i];
+
+        std::vector<float> op_scan_(op_scan.size());
+        for (size_t i = 0; i < op_scan.size(); i++)
+          op_scan_[i] = op_scan[i];
 
         // Publish the laser message
         sensor_msgs::LaserScan scan_msg;
@@ -391,6 +508,19 @@ class RacecarSimulator {
 
         scan_pub.publish(scan_msg);
 
+
+        sensor_msgs::LaserScan op_scan_msg;
+        op_scan_msg.header.stamp = timestamp;
+        op_scan_msg.header.frame_id = op_scan_frame;
+        op_scan_msg.angle_min = -scan_simulator.get_field_of_view()/2.;
+        op_scan_msg.angle_max =  scan_simulator.get_field_of_view()/2.;
+        op_scan_msg.angle_increment = scan_simulator.get_angle_increment();
+        op_scan_msg.range_max = 100;
+        op_scan_msg.ranges = scan_;
+        op_scan_msg.intensities = scan_;
+
+        op_scan_pub.publish(op_scan_msg);
+
         // Publish a transformation between base link and laser
         geometry_msgs::TransformStamped scan_ts;
         scan_ts.transform.translation.x = scan_distance_to_base_link;
@@ -399,6 +529,14 @@ class RacecarSimulator {
         scan_ts.header.frame_id = base_frame;
         scan_ts.child_frame_id = scan_frame;
         br.sendTransform(scan_ts);
+
+        geometry_msgs::TransformStamped op_scan_ts;
+        op_scan_ts.transform.translation.x = scan_distance_to_base_link;
+        op_scan_ts.transform.rotation.w = 1;
+        op_scan_ts.header.stamp = timestamp;
+        op_scan_ts.header.frame_id = op_base_frame;
+        op_scan_ts.child_frame_id = op_scan_frame;
+        op_br.sendTransform(op_scan_ts);
       }
     }
 
@@ -419,6 +557,14 @@ class RacecarSimulator {
       pose.theta = tf2::impl::getYaw(quat);
     }
 
+    void op_pose_callback(const geometry_msgs::PoseStamped &msg) {
+      opponent_pose.x = msg.pose.position.x;
+      opponent_pose.y = msg.pose.position.y;
+      geometry_msgs::Quaternion q = msg.pose.orientation;
+      tf2::Quaternion quat(q.x, q.y, q.z, q.w);
+      opponent_pose.theta = tf2::impl::getYaw(quat);
+    }
+
     void pose_rviz_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg) {
       geometry_msgs::PoseStamped temp_pose;
       temp_pose.header = msg->header;
@@ -426,9 +572,18 @@ class RacecarSimulator {
       pose_callback(temp_pose);
     }
 
+    void op_pose_rviz_callback(const geometry_msgs::PoseStamped::ConstPtr &msg) {
+      op_pose_callback(*msg);
+    }
+
     void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
       set_speed(msg.drive.speed);
       set_steering_angle(msg.drive.steering_angle, ros::Time::now());
+    }
+
+    void op_drive_callback(const ackermann_msgs::AckermannDriveStamped &msg) {
+      set_op_speed(msg.drive.speed);
+      set_op_steering_angle(msg.drive.steering_angle, ros::Time::now());
     }
 
     void joy_callback(const sensor_msgs::Joy & msg) {
@@ -453,15 +608,38 @@ class RacecarSimulator {
       map_pub.publish(current_map);
     }
 
+    // button callbaccks
     void clear_obstacles(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
-      ROS_INFO("Clearing obstacles.");
-      current_map = original_map;
-      map_pub.publish(current_map);
-      eroded_map = original_eroded_map;
+      bool clear_obs_clicked = false;
+      if (feedback->event_type == 3) {
+        clear_obs_clicked = true;
+      }
+      if (clear_obs_clicked) {
+        ROS_INFO("Clearing obstacles.");
+        current_map = original_map;
+        map_pub.publish(current_map);
+        eroded_map = original_eroded_map;
+        clear_obs_clicked = false;
+      }
+    }
+    void spawn_car(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+      bool spawn_car_clicked = false;
+      if (feedback->event_type == 3) {
+        spawn_car_clicked = true;
+      }
+      if (spawn_car_clicked && !opponent_spawned) {
+        ROS_INFO("Spawning opponent.");
+        spawn_car_clicked = false;
+        opponent_spawned = true;
+      }
     }
 
     void set_speed(double speed_) {
       speed = std::min(std::max(speed_, -max_speed), max_speed);
+    }
+
+    void set_op_speed(double speed_) {
+      opponent_speed = std::min(std::max(speed_, -max_speed), max_speed);
     }
 
     void set_steering_angle(double steering_angle_, ros::Time timestamp) {
@@ -482,6 +660,26 @@ class RacecarSimulator {
       ts.header.frame_id = "front_right_hinge";
       ts.child_frame_id = "front_right_wheel";
       br.sendTransform(ts);
+    }
+
+    void set_op_steering_angle(double steering_angle_, ros::Time timestamp) {
+      opponent_steering_angle = std::min(std::max(steering_angle_, -max_steering_angle), max_steering_angle);
+
+      // Publish the steering angle
+      tf2::Quaternion quat;
+      quat.setEuler(0., 0., steering_angle);
+      geometry_msgs::TransformStamped ts;
+      ts.transform.rotation.x = quat.x();
+      ts.transform.rotation.y = quat.y();
+      ts.transform.rotation.z = quat.z();
+      ts.transform.rotation.w = quat.w();
+      ts.header.stamp = timestamp;
+      ts.header.frame_id = "op_front_left_hinge";
+      ts.child_frame_id = "op_front_left_wheel";
+      op_br.sendTransform(ts);
+      ts.header.frame_id = "op_front_right_hinge";
+      ts.child_frame_id = "op_front_right_wheel";
+      op_br.sendTransform(ts);
     }
 
     void map_callback(const nav_msgs::OccupancyGrid & msg) {

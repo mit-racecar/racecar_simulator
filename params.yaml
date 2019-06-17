@@ -50,10 +50,19 @@ pose_rviz_topic: "/initialpose"
 eroded_map_topic: "/eroded_map"
 collision_topic: "/collision"
 
+# The names of opponent car's topics to listen and publish to
+opponent_drive_topic: "/op_drive"
+opponent_scan_topic: "/op_scan"
+opponent_pose_topic: "/op_pose"
+opponent_odom_topic: "/op_odom"
+opponent_pose_rviz_topic: "/move_base_simple/goal"
+
 # The names of the transformation frames published to
 map_frame: "map"
 base_frame: "base_link"
+opponent_base_frame: "op_base_link"
 scan_frame: "laser"
+opponent_scan_frame: "op_laser"
 
 # Turn this off for mapping
 broadcast_transform: true
