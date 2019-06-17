@@ -27,6 +27,7 @@
 #include <Eigen/Geometry>
 
 #include <iostream>
+#include <math.h>
 
 using namespace racecar_simulator;
 
@@ -45,7 +46,9 @@ class RacecarSimulator {
     // opponent state and parameters
     bool opponent_spawned = false;
     Pose2D opponent_pose;
+    Pose2D previous_opponent_pose;
     double opponent_speed, opponent_steering_angle;
+    double car_collision_thresh;
 
 
     // interactive markers' server
@@ -129,11 +132,14 @@ class RacecarSimulator {
       // Initialize the pose and driving commands
       pose = {.x=0, .y=0, .theta=0};
       opponent_pose = {.x=0, .y=0, .theta=0};
+      previous_opponent_pose = {.x=0, .y=0, .theta=0};
       speed = 0;
       opponent_speed = 0;
       steering_angle = 0;
       opponent_steering_angle = 0;
       previous_seconds = ros::Time::now().toSec();
+
+      car_collision_thresh = 0.4;
 
       // Get the topic names
       std::string joy_topic, drive_topic, map_topic, 
@@ -360,7 +366,7 @@ class RacecarSimulator {
       return rc;
     }
 
-    bool check_collision(double x, double y) {
+    bool check_map_collision(double x, double y) {
       std::vector<int> rc = coord_2_cell_rc(x, y);
       int val = eroded_map[rc_2_ind(rc[0], rc[1])];
       // ROS_INFO("current row: %d, current col: %d, current_val: %d", rc[0], rc[1], val);
@@ -371,7 +377,14 @@ class RacecarSimulator {
       eroded_pub.publish(eroded_map_msg);
       return (val!=0);
     }
-
+    
+    bool check_opponent_collision() {
+      if (!opponent_spawned) {
+	return false;
+      } else {
+	return (std::sqrt((pose.x-opponent_pose.x)*(pose.x-opponent_pose.x)+(pose.y-opponent_pose.y)*(pose.y-opponent_pose.y)) < car_collision_thresh);
+      }
+    }
     void update_pose(const ros::TimerEvent&) {
 
       // Update the pose
@@ -383,12 +396,14 @@ class RacecarSimulator {
           steering_angle,
           wheelbase,
           current_seconds - previous_seconds);
+      previous_opponent_pose = opponent_pose;
       opponent_pose = AckermannKinematics::update(
         opponent_pose,
         opponent_speed,
         opponent_steering_angle,
         wheelbase,
         current_seconds - previous_seconds);
+      
       previous_seconds = current_seconds;
 
       // Convert the pose into a transformation
@@ -413,7 +428,7 @@ class RacecarSimulator {
       op_t.rotation.w = op_quat.w();
 
       // check collision
-      if (check_collision(pose.x, pose.y)) set_speed(0);
+      if (check_map_collision(pose.x, pose.y) || check_opponent_collision()) set_speed(0);
 
       // Add a header to the transformation
       geometry_msgs::TransformStamped ts;
@@ -491,6 +506,26 @@ class RacecarSimulator {
         for (size_t i = 0; i < scan.size(); i++)
           scan_[i] = scan[i];
 
+        // add scan if opponent is spawned
+	if (opponent_spawned) {
+	  double diff_x = opponent_pose.x - scan_pose.x;
+          double diff_y = opponent_pose.y - scan_pose.y;
+	  double diff_dist = std::sqrt(diff_x*diff_x + diff_y*diff_y);
+	  // TODO: change angle range so that it depends on the distance to the opponent
+	  //double angle_infl = 0.04;
+	  double angle_infl = 1./(10*diff_dist);
+	  double angle = -scan_pose.theta + std::atan2(diff_y, diff_x);
+	  if (angle < scan_simulator.get_field_of_view()/2. || angle > -scan_simulator.get_field_of_view()/2.) {
+	    double angle_inc = scan_simulator.get_angle_increment();
+	    double angle_min = -scan_simulator.get_field_of_view()/2.;
+	    int start_ind = static_cast<int>((angle-angle_infl-angle_min)/angle_inc);
+	    int end_ind = static_cast<int>((angle+angle_infl-angle_min)/angle_inc);
+	    for (int i=start_ind; i<=end_ind; i++) {
+	      if (scan_[i] > diff_dist) scan_[i] = diff_dist;
+	    }
+	  }
+	}
+
         std::vector<float> op_scan_(op_scan.size());
         for (size_t i = 0; i < op_scan.size(); i++)
           op_scan_[i] = op_scan[i];
@@ -516,8 +551,8 @@ class RacecarSimulator {
         op_scan_msg.angle_max =  scan_simulator.get_field_of_view()/2.;
         op_scan_msg.angle_increment = scan_simulator.get_angle_increment();
         op_scan_msg.range_max = 100;
-        op_scan_msg.ranges = scan_;
-        op_scan_msg.intensities = scan_;
+        op_scan_msg.ranges = op_scan_;
+        op_scan_msg.intensities = op_scan_;
 
         op_scan_pub.publish(op_scan_msg);
 
@@ -537,8 +572,26 @@ class RacecarSimulator {
         op_scan_ts.header.frame_id = op_base_frame;
         op_scan_ts.child_frame_id = op_scan_frame;
         op_br.sendTransform(op_scan_ts);
+
+        // project opponent car onto map for laserscan and collision if spawned
+	//if (opponent_spawned) project_opponent();
       }
     }
+    
+    void project_opponent() {
+      // clear projection from last frame
+      double prev_x = previous_opponent_pose.x;
+      double prev_y = previous_opponent_pose.y;
+      std::vector<int> prev_rc = coord_2_cell_rc(prev_x, prev_y);
+      int prev_ind = rc_2_ind(prev_rc[0], prev_rc[1]);
+      clear_obs(prev_ind);
+      double x = opponent_pose.x;
+      double y = opponent_pose.y;
+      std::vector<int> rc = coord_2_cell_rc(x,y);
+      int ind = rc_2_ind(rc[0], rc[1]);
+      add_obs(ind);
+    }
+      
 
     void obs_callback(const geometry_msgs::PointStamped &msg) {
       double x = msg.point.x;
@@ -603,6 +656,20 @@ class RacecarSimulator {
           int current_ind = rc_2_ind(current_r, current_c);
           current_map.data[current_ind] = 100;
           eroded_map[current_ind] = 100;
+        }
+      }
+      map_pub.publish(current_map);
+    }
+
+    void clear_obs(int ind) {
+      std::vector<int> rc = ind_2_rc(ind);
+      for (int i=-obstacle_size; i<obstacle_size; i++) {
+        for (int j=-obstacle_size; j<obstacle_size; j++) {
+          int current_r = rc[0]+i;
+          int current_c = rc[1]+j;
+          int current_ind = rc_2_ind(current_r, current_c);
+          current_map.data[current_ind] = 0;
+          eroded_map[current_ind] = 0;
         }
       }
       map_pub.publish(current_map);
