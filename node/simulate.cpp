@@ -245,7 +245,7 @@ class RacecarSimulator {
       // clear_obs_button.pose.position.y = origin_y+(1/3)*map_height*map_resolution;
       // TODO: find better positioning of buttons
       clear_obs_button.pose.position.x = 0;
-      clear_obs_button.pose.position.y = -12;
+      clear_obs_button.pose.position.y = -5;
       clear_obs_button.scale = 1;
       clear_obs_button.name = "clear_obstacles";
       clear_obs_button.description = "Clear Obstacles\n(Left Click)";
@@ -256,7 +256,7 @@ class RacecarSimulator {
       visualization_msgs::Marker clear_obs_marker;
       clear_obs_marker.type = visualization_msgs::Marker::CUBE;
       clear_obs_marker.scale.x = clear_obs_button.scale*0.45;
-      clear_obs_marker.scale.y = clear_obs_button.scale*0.45;
+      clear_obs_marker.scale.y = clear_obs_button.scale*0.65;
       clear_obs_marker.scale.z = clear_obs_button.scale*0.45;
       clear_obs_marker.color.r = 0.0;
       clear_obs_marker.color.g = 1.0;
