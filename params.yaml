@@ -27,7 +27,7 @@ scan_std_dev: 0.01 # meters
 map_free_threshold: 0.3
 
 # Enables joystick if true
-joy: false
+joy: true
 joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
