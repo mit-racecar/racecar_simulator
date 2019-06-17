@@ -323,6 +323,18 @@ class RacecarSimulator {
       visualization_msgs::InteractiveMarkerControl spawn_car_control;
       spawn_car_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
       spawn_car_control.name = "spawn_car_control";
+
+      visualization_msgs::InteractiveMarker despawn_car_button;
+      despawn_car_button.header.frame_id = "map";
+      despawn_car_button.pose.position.x = -2;
+      despawn_car_button.pose.position.y = -8;
+      despawn_car_button.scale = 1;
+      despawn_car_button.name = "despawn_car";
+      despawn_car_button.description = "Despawn Opponent Car\n(Left Click)";
+      visualization_msgs::InteractiveMarkerControl despawn_car_control;
+      despawn_car_control.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      despawn_car_control.name = "despawn_car_control";
+
       // make a box for the button
       visualization_msgs::Marker spawn_car_marker;
       spawn_car_marker.type = visualization_msgs::Marker::CUBE;
@@ -340,6 +352,23 @@ class RacecarSimulator {
 
       im_server.insert(spawn_car_button);
       im_server.setCallback(spawn_car_button.name, boost::bind(&RacecarSimulator::spawn_car, this, _1));
+      
+      visualization_msgs::Marker despawn_car_marker;
+      despawn_car_marker.type = visualization_msgs::Marker::CUBE;
+      despawn_car_marker.scale.x = despawn_car_button.scale*0.45;
+      despawn_car_marker.scale.y = despawn_car_button.scale*0.65;
+      despawn_car_marker.scale.z = despawn_car_button.scale*0.45;
+      despawn_car_marker.color.r = 0.5;
+      despawn_car_marker.color.g = 0.1;
+      despawn_car_marker.color.b = 0.1;
+      despawn_car_marker.color.a = 1.0;
+
+      despawn_car_control.markers.push_back(despawn_car_marker);
+      despawn_car_control.always_visible = true;
+      despawn_car_button.controls.push_back(despawn_car_control);
+
+      im_server.insert(despawn_car_button);
+      im_server.setCallback(despawn_car_button.name, boost::bind(&RacecarSimulator::despawn_car, this, _1));
 
       im_server.applyChanges();
 
@@ -698,6 +727,17 @@ class RacecarSimulator {
         ROS_INFO("Spawning opponent.");
         spawn_car_clicked = false;
         opponent_spawned = true;
+      }
+    }
+    void despawn_car(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
+      bool despawn_car_clicked = false;
+      if (feedback->event_type == 3) {
+        despawn_car_clicked = true;
+      }
+      if (despawn_car_clicked && opponent_spawned) {
+      	ROS_INFO("Despawning opponent.");
+      	despawn_car_clicked = false;
+      	opponent_spawned = false;
       }
     }
 
