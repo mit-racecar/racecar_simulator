@@ -66,3 +66,19 @@ opponent_scan_frame: "op_laser"
 
 # Turn this off for mapping
 broadcast_transform: true
+
+# Scan to image parameters
+converted_image_topic: "/converted_scan"
+image_size: 64
+image_res: 0.05
+car_width: 10
+car_length: 12
+background_r: 0
+background_g: 255
+background_b: 0
+road_r: 100
+road_g: 100
+road_b: 100
+car_r: 255
+car_g: 0
+car_b: 0
