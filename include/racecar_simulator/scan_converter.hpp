@@ -14,6 +14,7 @@ public:
     ScanConverter(ros::NodeHandle &nh);
     virtual ~ScanConverter();
     cv::Mat update_scan(std::vector<float> &ranges, std::vector<float> &angles_vector, int scan_count);
+    void scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_msg);
 private:
     ros::NodeHandle nh_;
     ros::Subscriber scan_sub;

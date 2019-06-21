@@ -53,6 +53,9 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     geometry_msgs
     interactive_markers
     visualization_msgs
+    cv_bridge
+    image_transport
+    std_msgs
     )
 
   # Include catkin_libraries

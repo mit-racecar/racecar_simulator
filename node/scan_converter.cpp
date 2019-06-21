@@ -18,9 +18,10 @@ ScanConverter::ScanConverter(ros::NodeHandle &nh): nh_(nh), it(nh) {
     nh_.getParam("image_size", img_height);
     nh_.getParam("image_res", img_res);
     nh_.getParam("car_width", car_width);
-    nh_.getParam("car_legnth", car_length);
+    nh_.getParam("car_length", car_length);
     car_x = img_width/2;
-    car_y = img_heigth-15;
+    car_y = img_height-15;
+
 
     // colors
     nh_.getParam("background_r", bg_r);
@@ -68,10 +69,10 @@ void ScanConverter::scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_m
     // car
     cv::Point car_top_left(car_x-car_width/2, car_y-car_length/2);
     cv::Point car_bot_right(car_x+car_width/2, car_y+car_length/2);
-    cv::rectangle(img, car_top_left, car_bot_right, cv::Scalar(car_b, car_g, car_r));
+    cv::rectangle(img, car_top_left, car_bot_right, cv::Scalar(car_b, car_g, car_r), CV_FILLED);
     sensor_msgs::ImagePtr ros_img;
     if (!img.empty()) {
-        ros_img = cv::bridge::CvImage(std::msgs::Header(), "bgr8", img).toImageMsg();
+        ros_img = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();
     }
     img_pub.publish(ros_img);
 }
@@ -106,7 +107,7 @@ bool ScanConverter::out_of_bounds(int img_x, int img_y) {
     return (img_x < 0 || img_x >= img_width || img_y < 0 || img_y >= img_height);
 }
 
-int main(int argc, char const** argv)
+int main(int argc, char** argv)
 {
     ros::init(argc, argv, "scan_converter");
     ros::NodeHandle nh;
