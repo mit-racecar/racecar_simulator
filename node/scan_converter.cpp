@@ -24,15 +24,9 @@ ScanConverter::ScanConverter(ros::NodeHandle &nh): nh_(nh), it(nh) {
 
 
     // colors
-    nh_.getParam("background_r", bg_r);
-    nh_.getParam("background_g", bg_g);
-    nh_.getParam("background_b", bg_b);
-    nh_.getParam("road_r", road_r);
-    nh_.getParam("road_g", road_g);
-    nh_.getParam("road_b", road_b);
-    nh_.getParam("car_r", car_r);
-    nh_.getParam("car_g", car_g);
-    nh_.getParam("car_b", car_b);
+    nh_.getParam("background_color", bg_col);
+    nh_.getParam("road_color", road_col);
+    nh_.getParam("car_color", car_col);
 
     // scan info
     boost::shared_ptr<sensor_msgs::LaserScan const> laser_ptr;
@@ -62,14 +56,14 @@ void ScanConverter::scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_m
     }
     contours.push_back(road_contour);
     // background
-    cv::Mat img(img_height, img_width, CV_8UC3, cv::Scalar(bg_b, bg_g, bg_r));
+    cv::Mat img(img_height, img_width, CV_8UC3, cv::Scalar(bg_col[0], bg_col[1], bg_col[2]));
     // road
-    cv::Scalar road_color(road_b, road_g, road_r);
+    cv::Scalar road_color(road_col[0], road_col[1], road_col[2]);
     cv::drawContours(img, contours, 0, road_color, CV_FILLED);
     // car
     cv::Point car_top_left(car_x-car_width/2, car_y-car_length/2);
     cv::Point car_bot_right(car_x+car_width/2, car_y+car_length/2);
-    cv::rectangle(img, car_top_left, car_bot_right, cv::Scalar(car_b, car_g, car_r), CV_FILLED);
+    cv::rectangle(img, car_top_left, car_bot_right, cv::Scalar(car_col[0], car_col[1], car_col[2]), CV_FILLED);
     sensor_msgs::ImagePtr ros_img;
     if (!img.empty()) {
         ros_img = cv_bridge::CvImage(std_msgs::Header(), "bgr8", img).toImageMsg();

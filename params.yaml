@@ -73,12 +73,7 @@ image_size: 64
 image_res: 0.05
 car_width: 10
 car_length: 12
-background_r: 0
-background_g: 255
-background_b: 0
-road_r: 100
-road_g: 100
-road_b: 100
-car_r: 255
-car_g: 0
-car_b: 0
+# colors, bgr, ints
+background_color: [0, 255, 0]
+road_color: [100, 100, 100]
+car_color: [0, 0, 255]

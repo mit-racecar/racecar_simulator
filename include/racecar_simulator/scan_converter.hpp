@@ -27,7 +27,7 @@ private:
     int car_width, car_length;
     double img_res;
     // colors
-    int bg_r, bg_g, bg_b, road_r, road_g, road_b, car_r, car_g, car_b;
+    std::vector<int> bg_col, road_col, car_col;
 
     std::vector<float> angles_vector;
     int scan_count;
