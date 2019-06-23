@@ -606,6 +606,8 @@ class RacecarSimulator {
 	//if (opponent_spawned) project_opponent();
       }
     }
+
+    
     
     void project_opponent() {
       // clear projection from last frame

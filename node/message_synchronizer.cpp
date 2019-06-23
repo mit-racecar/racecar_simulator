@@ -11,7 +11,7 @@ MsgSync::~MsgSync() {
 MsgSync::MsgSync(ros::NodeHandle &nh): nh_(nh), it(nh) {
     std::string img_topic, scan_topic, odom_topic, collision_topic;
     nh_.getParam("scan_topic", scan_topic);
-    nh_.getParam("converted_img_toic", img_topic);
+    nh_.getParam("converted_image_topic", img_topic);
     nh_.getParam("odom_topic", odom_topic);
     nh_.getParam("collision_topic", collision_topic);
 
@@ -19,6 +19,8 @@ MsgSync::MsgSync(ros::NodeHandle &nh): nh_(nh), it(nh) {
     img_sub = it.subscribe(img_topic, 10, &MsgSync::img_callback, this);
     odom_sub = nh_.subscribe(odom_topic, 10, &MsgSync::odom_callback, this);
     collision_sub = nh_.subscribe(collision_topic, 10, &MsgSync::collision_callback, this);
+
+    mega_pub = nh_.advertise<racecar_simulator::SynchronizedSensor>("mega", 1);
 }
 
 void MsgSync::scan_callback(const sensor_msgs::LaserScan::ConstPtr &scan_msg) {
