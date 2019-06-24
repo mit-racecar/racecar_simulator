@@ -43,7 +43,7 @@ map_free_threshold: 0.8
 ttc_threshold: 0.01
 
 # Safety margin for collision avoidance assisted driving
-coll_threshold: 1.0
+coll_threshold: 0.4
 
 # Indices for mux controller
 mux_size: 4

@@ -72,11 +72,7 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     sensor_msgs
     )
 
-  # generate messages
-  generate_messages(
-      DEPENDENCIES
-      std_msgs 
-  )
+
 
 
   # Include catkin_libraries
