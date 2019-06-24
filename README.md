@@ -1,6 +1,6 @@
 # Racecar Simulator
 
-This is a lightweight 2D simulator of the MIT Racecar.
+This is a lightweight 2D simulator of the UPenn F1/10 Racecar.
 It can be built with ROS, or it can be used as a standalone C++ library.
 
 ## ROS
@@ -25,7 +25,7 @@ The full list of dependencies can be found in the ```package.xml``` file.
 To install the simulator package, clone it into your catkin workspace:
 
     cd ~/catkin_ws/src
-    git clone https://github.com/mit-racecar/racecar_simulator.git
+    git clone https://github.com/jauckley/racecar_simulator.git
     
 Then run ```catkin_make``` to build it:
 
@@ -84,7 +84,11 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 
 ```scan_topic```: The topic to publish the simulated scan to.
 
-```distance_transform_topic```: The topic to publish a distance transform to for visualization (see the implimentation section below).
+```distance_transform_topic```: The topic to publish a distance transform to for visualization (see the implementation section below).
+
+```coll_topic```: The topic to publish a custom Collision message (details in msg/Collision.msg).
+
+
 
 #### Frames
 
@@ -106,6 +110,12 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 
 ```max_steering_angle```: The maximum steering angle of the car in radians.
 
+```max_accel```: The maximum acceleration of the car in meters per second squared.
+
+```max_steering_vel```: The maximum steering angle velocity of the car in radians per second.
+
+
+
 #### Lidar Parameters
 
 ```scan_beams```: The number of beams in the scan.
@@ -126,6 +136,10 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 
 ```joy_angle_axis```: The index of the joystick axis used to control the angle of the car.  To determine this parameter it may be useful to print out the joystick messages with ```rostopic echo /joy```.
 
+```joy_button_idx```: The index of the joystick button used to turn on/off joystick driving.
+
+```assist_button_idx```: The index of the joystick button used to turn on/off the driver assistance functionality.
+
 ```joy_max_speed```: The maximum speed the joystick is able to propel the car, measured in meters per second.
 
 ## C++ API
@@ -137,6 +151,7 @@ Ackermann kinematics
 
 ## TODO
 
-- Finish documentation
-- Simulate odometry and imu
-- Add colision detection?
+- Documentation-
+	- include driver assist
+	- further detail car parameters
+	- detail dynamics options

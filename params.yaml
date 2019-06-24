@@ -1,17 +1,30 @@
 # The distance between the front and
 # rear axle of the racecar
-wheelbase: 0.325 # meters
+wheelbase: 0.3302 # meters
+# width of racecar
+width: 0.2032 # meters
 
 # Limits on the speed and steering angle
-max_speed: 4. # meters/second
-max_steering_angle: 0.34 # radians
+max_speed: 3. #  meters/second
+max_steering_angle: 0.4189 # radians
+max_accel: 2 # meters/second^2
+max_steering_vel: 2.0 # radians/second
+friction_coeff: 1.0 # -
+height_cg: .0762 # m
+l_cg2rear: .1651 # m
+l_cg2front: .1651 # m
+C_S_front: .95 # 1/rad ? (estimated weight/4)
+C_S_rear: .95 # 1/rad ? (estimated weight/4)
+mass: 3.62 # kg (estimated 8 pounds)
+moment_inertia: .018143 # kg m^2 (estimated as a disk with radius = .1 m)
 
 # The rate at which the pose and the lidar publish
 update_pose_rate: 0.001
 
 # Lidar simulation parameters
 scan_beams: 1080
-scan_field_of_view: 4.71 # radians
+scan_field_of_view: 6.2831853 #4.71 # radians
+
 
 # The distance from the center of the
 # rear axis (base_link) to the lidar
@@ -24,10 +37,26 @@ scan_std_dev: 0.01 # meters
 # The probability threshold for points
 # in the occupancy grid to be considered "free".
 # Used for the lidar simulator.
-map_free_threshold: 0.3
+map_free_threshold: 0.8
+
+# Time to collision cutoff value
+ttc_threshold: 0.01
+
+# Safety margin for collision avoidance assisted driving
+coll_threshold: 1.0
+
+# Indices for mux controller
+mux_size: 4
+joy_mux_idx: 0
+dr_assist_mux_idx: 1
+unused_idx1: 2
+unused_idx2: 3
 
 # Enables joystick if true
 joy: true
+# Joystick indices
+joy_button_idx: 4  # LB button
+assist_button_idx: 1 # A button
 joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
@@ -47,8 +76,11 @@ scan_topic: "/scan"
 pose_topic: "/pose"
 odom_topic: "/odom"
 pose_rviz_topic: "/initialpose"
-eroded_map_topic: "/eroded_map"
-collision_topic: "/collision"
+
+collision_topic: "/coll"
+mux_topic: "/mux"
+
+
 
 # The names of opponent car's topics to listen and publish to
 opponent_drive_topic: "/op_drive"
@@ -56,6 +88,7 @@ opponent_scan_topic: "/op_scan"
 opponent_pose_topic: "/op_pose"
 opponent_odom_topic: "/op_odom"
 opponent_pose_rviz_topic: "/move_base_simple/goal"
+
 
 # The names of the transformation frames published to
 map_frame: "map"

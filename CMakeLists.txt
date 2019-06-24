@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g") 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 find_package(OpenCV)
 find_package(Eigen3)
@@ -51,6 +51,7 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     geometry_msgs
+
     interactive_markers
     visualization_msgs
     cv_bridge
@@ -62,6 +63,7 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
   add_message_files(
     FILES
     SynchronizedSensor.msg
+    Collision.msg
     )
   generate_messages(
     DEPENDENCIES
@@ -69,6 +71,13 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     )
+
+  # generate messages
+  generate_messages(
+      DEPENDENCIES
+      std_msgs 
+  )
+
 
   # Include catkin_libraries
   catkin_package(
@@ -79,12 +88,16 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
   set(LIBS ${LIBS} ${catkin_LIBRARIES})
   include_directories(include ${catkin_INCLUDE_DIRS})
 
+
+  
+
   # Add the nodes
   file(GLOB NODE_SRC_FILES node/*.cpp)
   foreach(_node_file ${NODE_SRC_FILES})
       get_filename_component(_node_name ${_node_file} NAME_WE)
       add_executable(${_node_name} ${_node_file})
       target_link_libraries(${_node_name} ${LIBS})
+      add_dependencies(${_node_name} racecar_simulator_generate_messages_cpp)
   endforeach()
 
   # Install the library
