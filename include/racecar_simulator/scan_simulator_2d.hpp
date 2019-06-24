@@ -58,6 +58,7 @@ class ScanSimulator2D {
         double resolution,
         const Pose2D & origin,
         double free_threshold);
+    void set_map(const std::vector<double> &map, double free_threshold);
 
     void scan(const Pose2D & pose, double * scan_data);
     const std::vector<double> scan(const Pose2D & pose);

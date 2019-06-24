@@ -7,10 +7,10 @@ max_speed: 4. # meters/second
 max_steering_angle: 0.34 # radians
 
 # The rate at which the pose and the lidar publish
-update_pose_rate: 0.02
+update_pose_rate: 0.001
 
 # Lidar simulation parameters
-scan_beams: 100
+scan_beams: 1080
 scan_field_of_view: 4.71 # radians
 
 # The distance from the center of the
@@ -32,6 +32,12 @@ joy_speed_axis: 1
 joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
 
+# map-collision parameters
+inflation_size: 5
+
+# obstacle parameters
+obstacle_size: 2
+
 # The names of topics to listen and publish to
 joy_topic: "/joy"
 drive_topic: "/drive"
@@ -41,11 +47,33 @@ scan_topic: "/scan"
 pose_topic: "/pose"
 odom_topic: "/odom"
 pose_rviz_topic: "/initialpose"
+eroded_map_topic: "/eroded_map"
+collision_topic: "/collision"
+
+# The names of opponent car's topics to listen and publish to
+opponent_drive_topic: "/op_drive"
+opponent_scan_topic: "/op_scan"
+opponent_pose_topic: "/op_pose"
+opponent_odom_topic: "/op_odom"
+opponent_pose_rviz_topic: "/move_base_simple/goal"
 
 # The names of the transformation frames published to
 map_frame: "map"
 base_frame: "base_link"
+opponent_base_frame: "op_base_link"
 scan_frame: "laser"
+opponent_scan_frame: "op_laser"
 
 # Turn this off for mapping
 broadcast_transform: true
+
+# Scan to image parameters
+converted_image_topic: "/converted_scan"
+image_size: 64
+image_res: 0.05
+car_width: 7
+car_length: 9
+# colors, bgr, ints
+background_color: [0, 255, 0]
+road_color: [100, 100, 100]
+car_color: [0, 0, 255]

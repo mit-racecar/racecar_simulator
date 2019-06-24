@@ -11,6 +11,8 @@ endif()
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+find_package(OpenCV)
+find_package(Eigen3)
 
 ######################################
 # Compile the library >
@@ -49,12 +51,30 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     geometry_msgs
+    interactive_markers
+    visualization_msgs
+    cv_bridge
+    image_transport
+    std_msgs
+    message_generation
+    )
+
+  add_message_files(
+    FILES
+    SynchronizedSensor.msg
+    )
+  generate_messages(
+    DEPENDENCIES
+    std_msgs
+    nav_msgs
+    sensor_msgs
     )
 
   # Include catkin_libraries
   catkin_package(
       INCLUDE_DIRS include
       LIBRARIES ${PROJECT_NAME}
+      CATKIN_DEPENDS message_runtime
   )
   set(LIBS ${LIBS} ${catkin_LIBRARIES})
   include_directories(include ${catkin_INCLUDE_DIRS})

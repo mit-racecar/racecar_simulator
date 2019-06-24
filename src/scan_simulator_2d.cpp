@@ -127,6 +127,17 @@ void ScanSimulator2D::set_map(
   }
   DistanceTransform::distance_2d(dt, width, height, resolution);
 }
+// overload for changing map on the fly
+void ScanSimulator2D::set_map(const std::vector<double> & map, double free_threshold) {
+  for (size_t i = 0; i < map.size(); i++) {
+    if (0 <= map[i] and map[i] <= free_threshold) {
+      dt[i] = 99999; // Free
+    } else {
+      dt[i] = 0; // Occupied
+    }
+  }
+  DistanceTransform::distance_2d(dt, width, height, resolution);
+}
 
 void ScanSimulator2D::xy_to_row_col(double x, double y, int * row, int * col) const {
   // Translate the state by the origin
