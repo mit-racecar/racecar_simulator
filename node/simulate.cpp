@@ -111,7 +111,7 @@ private:
     ros::Publisher odom_pub;
     // ros::Publisher img_pub;
     ros::Publisher collision_pub;
-    ros::Publisher eroded_pub;
+
     // publisher for map with obstacles
     ros::Publisher map_pub;
 
@@ -128,12 +128,10 @@ private:
     nav_msgs::OccupancyGrid original_map;
     nav_msgs::OccupancyGrid current_map;
 
-    // eroded map for collision
-    std::vector<int> eroded_map;
-    std::vector<int> original_eroded_map;
+    // for obstacle collision
     int map_width, map_height, inflation_size;
     double map_resolution, origin_x, origin_y;
-    nav_msgs::OccupancyGrid eroded_map_msg;
+
 
     // Publish and subscribe to collision data
     ros::Publisher coll_pub;
@@ -536,17 +534,17 @@ public:
             return rc;
         }
 
-        bool check_map_collision(double x, double y) {
-            std::vector<int> rc = coord_2_cell_rc(x, y);
-            int val = eroded_map[rc_2_ind(rc[0], rc[1])];
-            // ROS_INFO("current row: %d, current col: %d, current_val: %d", rc[0], rc[1], val);
-            std_msgs::Bool bool_msg;
-            bool_msg.data = (val!=0);
-            collision_pub.publish(bool_msg);
-            if (val!=0) ROS_INFO("collision");
-            eroded_pub.publish(eroded_map_msg);
-            return (val!=0);
-        }
+//        bool check_map_collision(double x, double y) {
+//            std::vector<int> rc = coord_2_cell_rc(x, y);
+//            int val = eroded_map[rc_2_ind(rc[0], rc[1])];
+//            // ROS_INFO("current row: %d, current col: %d, current_val: %d", rc[0], rc[1], val);
+//            std_msgs::Bool bool_msg;
+//            bool_msg.data = (val!=0);
+//            collision_pub.publish(bool_msg);
+//            if (val!=0) ROS_INFO("collision");
+//            eroded_pub.publish(eroded_map_msg);
+//            return (val!=0);
+//        }
 
 //        bool check_opponent_collision() {
 //            if (!opponent_spawned) {
@@ -1081,7 +1079,6 @@ public:
                     int current_c = rc[1]+j;
                     int current_ind = rc_2_ind(current_r, current_c);
                     current_map.data[current_ind] = 100;
-                    eroded_map[current_ind] = 100;
                 }
             }
             map_pub.publish(current_map);
@@ -1095,7 +1092,7 @@ public:
                     int current_c = rc[1]+j;
                     int current_ind = rc_2_ind(current_r, current_c);
                     current_map.data[current_ind] = 0;
-                    eroded_map[current_ind] = 0;
+
                 }
             }
             map_pub.publish(current_map);
@@ -1111,7 +1108,7 @@ public:
                 ROS_INFO("Clearing obstacles.");
                 current_map = original_map;
                 map_pub.publish(current_map);
-                eroded_map = original_eroded_map;
+
                 clear_obs_clicked = false;
             }
         }
