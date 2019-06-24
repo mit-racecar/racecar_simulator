@@ -7,7 +7,7 @@ width: 0.2032 # meters
 # Limits on the speed and steering angle
 max_speed: 3. #  meters/second
 max_steering_angle: 0.4189 # radians
-max_accel: 2 # meters/second^2
+max_accel: 2. # meters/second^2
 max_steering_vel: 2.0 # radians/second
 friction_coeff: 1.0 # -
 height_cg: .0762 # m

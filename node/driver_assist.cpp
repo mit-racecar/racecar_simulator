@@ -82,9 +82,9 @@ public:
                 angle2obs = PI - std::abs(msg.wall_ang);
 
             if ((angle2obs < .5) || (std::abs(msg.speed) > 2)) // params to be tuned
-                dr.acceleration = -max_accel * speed_sgn;
+                dr.speed = -max_speed * speed_sgn;
             else
-                dr.acceleration = 0.0;
+                dr.speed = 0.0;
 
 
             // set desired steering angle to be away from obstacle

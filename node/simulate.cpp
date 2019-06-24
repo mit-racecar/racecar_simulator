@@ -149,7 +149,7 @@ private:
 
     // for joystick controls
     double joy_desired_steer;
-    double joy_accel;
+    double joy_desired_velocity;
 
     // is the driver assist active
     bool dr_assist_on;
@@ -448,7 +448,7 @@ public:
         scan_ang_incr = scan_simulator.get_angle_increment();
 
         joy_desired_steer = 0;
-        joy_accel = 0;
+        joy_desired_velocity = 0;
 
         // initialize mux controller to start with joystick
         mux_controller.reserve(mux_size);
@@ -578,7 +578,7 @@ public:
 
             // set latest joystick commands
             if (mux_controller[joy_mux_idx]) {
-                set_accel(joy_accel);
+                set_accel(compute_accel(joy_desired_velocity));
                 set_steer_angle_vel(compute_steer_vel(joy_desired_steer));
             }
 
@@ -596,7 +596,11 @@ public:
                 std::cout << std::endl;
             }
 
-
+            std::cout << "max_vel: " << max_speed << std::endl;
+            std::cout << "max_accel: " << max_accel << std::endl;
+            std::cout << "vel: " << state.velocity << std::endl;
+            std::cout << "accel: " << accel << std::endl;
+            std::cout << std::endl;
 
             // Update the pose
             ros::Time timestamp = ros::Time::now();
@@ -894,7 +898,7 @@ public:
         }
 
         void first_ttc_actions() {
-            joy_accel = 0.0;
+            joy_desired_velocity = 0.0;
             joy_desired_steer = 0.0;
 
             // completely stop vehicle
@@ -915,15 +919,6 @@ public:
             // turn on joystick if active
             mux_controller[joy_mux_idx] = joy_on;
         }
-
-
-
-
-
-
-
-        
-
 
 
         void project_opponent() {
@@ -984,13 +979,13 @@ public:
         }
 
         void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
-            set_accel(msg.drive.acceleration);
+            set_accel(compute_accel(msg.drive.speed));
             set_steer_angle_vel(compute_steer_vel(msg.drive.steering_angle));
         }
 
         void op_drive_callback(const ackermann_msgs::AckermannDriveStamped &msg) {
-            set_op_accel(msg.drive.acceleration);
-            set_op_steer_angle_vel(msg.drive.steering_angle_velocity);
+            set_op_accel(msg.drive.speed);
+            set_op_steer_angle_vel(compute_steer_vel(msg.drive.steering_angle));
         }
 
         void joy_callback(const sensor_msgs::Joy & msg) {
@@ -998,7 +993,7 @@ public:
             // joy controller:
             // get values to be set at top of update_pose
             if (mux_controller[joy_mux_idx] && joy_on) {
-                joy_accel = joy_max_speed * msg.axes[joy_speed_axis];
+                joy_desired_velocity = max_speed * msg.axes[joy_speed_axis];
                 joy_desired_steer = max_steering_angle * msg.axes[joy_angle_axis];
             }
 
@@ -1222,7 +1217,7 @@ public:
             // get difference between current and desired
             double dif = (desired_angle - state.steer_angle);
 
-            // calculate and set velocity
+            // calculate velocity
             double steer_vel;
             if (std::abs(dif) > .02)  // if the difference is not trivial
                 steer_vel = dif / std::abs(dif) * max_steering_vel;
@@ -1231,6 +1226,18 @@ public:
 
 
             return steer_vel;
+        }
+
+        double compute_accel(double desired_velocity) {
+            // get difference between current and desired
+            double dif = (desired_velocity - state.velocity);
+
+            double kp = 2.0 * max_accel / max_speed;
+
+            // calculate acceleration
+            double acceleration = kp * dif;
+
+            return acceleration;
         }
 
     };
