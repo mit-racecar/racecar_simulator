@@ -2,9 +2,9 @@
 <package>
   <name>racecar_simulator</name>
   <version>0.0.0</version>
-  <description>A simulator of the MIT racecar.</description>
+  <description>A simulator of the F1/10 racecar.</description>
 
-  <maintainer email="tfh@mit.edu">tfh</maintainer>
+  <maintainer email="jauckley@seas.upenn.edu">Joe</maintainer>
 
   <license>MIT</license>
   <buildtool_depend>catkin</buildtool_depend>

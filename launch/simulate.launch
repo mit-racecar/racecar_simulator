@@ -2,6 +2,11 @@
   <!-- Listen to messages from joysicks -->
   <node pkg="joy" name="joy_node" type="joy_node"/>
 
+  <!-- Driver Assist Node -->
+  <node pkg="racecar_simulator" name="driver_assist" type="driver_assist" output="screen">
+    <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  </node>
+
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>

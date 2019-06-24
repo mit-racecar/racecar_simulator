@@ -72,6 +72,8 @@ class ScanSimulator2D {
 
     double get_field_of_view() const {return field_of_view;}
     double get_angle_increment() const {return angle_increment;}
+    int get_theta_discret() const {return theta_discretization;}
+    int get_num_beams() const {return num_beams;}
 };
 
 }

@@ -9,7 +9,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
+set(CMAKE_CXX_FLAGS_DEBUG "-g") 
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 ######################################
@@ -49,15 +49,33 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     geometry_msgs
+    message_generation
     )
+
+  # add message files
+  add_message_files(
+      FILES
+      Collision.msg
+  )
+
+  # generate messages
+  generate_messages(
+      DEPENDENCIES
+      std_msgs 
+  )
+
 
   # Include catkin_libraries
   catkin_package(
       INCLUDE_DIRS include
       LIBRARIES ${PROJECT_NAME}
+      #CATKIN_DEPENDS message_runtime
   )
   set(LIBS ${LIBS} ${catkin_LIBRARIES})
   include_directories(include ${catkin_INCLUDE_DIRS})
+
+
+  
 
   # Add the nodes
   file(GLOB NODE_SRC_FILES node/*.cpp)
@@ -65,6 +83,7 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
       get_filename_component(_node_name ${_node_file} NAME_WE)
       add_executable(${_node_name} ${_node_file})
       target_link_libraries(${_node_name} ${LIBS})
+      add_dependencies(${_node_name} racecar_simulator_generate_messages_cpp)
   endforeach()
 
   # Install the library
