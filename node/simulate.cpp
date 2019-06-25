@@ -10,7 +10,7 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Odometry.h>
 #include <std_msgs/Bool.h>
-#include <std_msgs/Int16MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 
 #include <sensor_msgs/Image.h>
 
@@ -81,7 +81,7 @@ private:
     // Joystick parameters
     int joy_speed_axis, joy_angle_axis;
     double joy_max_speed;
-    int joy_button_idx, assist_button_idx;
+    int joy_button_idx, copilot_button_idx;
 
     // A ROS node
     ros::NodeHandle n;
@@ -151,21 +151,22 @@ private:
     double joy_desired_steer;
     double joy_desired_velocity;
 
-    // is the driver assist active
-    bool dr_assist_on;
+    // is the safety copilot active
+    bool safety_copilot_on;
     // is joystick active
     bool joy_on;
 
     // set what is currently controlling the car
     std::vector<bool> mux_controller;
     int joy_mux_idx;
-    int dr_assist_mux_idx;
+    int safety_copilot_mux_idx;
+    int random_walker_mux_idx;
     int mux_size;
 
     // for demo
     std::vector<bool> prev_mux;
 
-    // for when driver assist gives control back
+    // for when safety copilot gives control back
     int prev_controller_idx;
 
     // pi
@@ -257,7 +258,8 @@ public:
         // get mux idxs
         n.getParam("mux_size", mux_size);
         n.getParam("joy_mux_idx", joy_mux_idx);
-        n.getParam("dr_assist_mux_idx", dr_assist_mux_idx);
+        n.getParam("safety_copilot_mux_idx", safety_copilot_mux_idx);
+        n.getParam("random_walker_mux_idx", random_walker_mux_idx);
 
 
         // Get joystick parameters
@@ -266,7 +268,7 @@ public:
         n.getParam("joy_angle_axis", joy_angle_axis);
         n.getParam("joy_max_speed", joy_max_speed);
         n.getParam("joy_button_idx", joy_button_idx);
-        n.getParam("assist_button_idx", assist_button_idx);
+        n.getParam("copilot_button_idx", copilot_button_idx);
 
         // Determine if we should broadcast
         n.getParam("broadcast_transform", broadcast_transform);
@@ -458,12 +460,14 @@ public:
             prev_mux[i] = false;
         }
 
-        mux_controller[joy_mux_idx] = true;
+        int starter = joy_mux_idx;
 
-        dr_assist_on = true;
+        mux_controller[starter] = true;
+
+        safety_copilot_on = true;
 
         // default is joy (could change)
-        prev_controller_idx = joy_mux_idx;
+        prev_controller_idx = starter;
 
         n.getParam("ttc_threshold", ttc_threshold);
 
@@ -505,11 +509,9 @@ public:
             }
         }
 
-        mux_pub = n.advertise<std_msgs::Int16MultiArray>(mux_topic, 10);
+        mux_pub = n.advertise<std_msgs::Int32MultiArray>(mux_topic, 10);
 
     }
-
-
 
 
 
@@ -565,14 +567,17 @@ public:
 
             }
 
-            // std_msgs::Int16MultiArray mux_msg;
-            // mux_msg.data [mux_size];
-            // std::cout << mux_msg.data[0] << std::endl;
-            // for (int i = 0; i < mux_size; i++) {
-            // 	std::cout << int(mux_controller[i]) << std::endl;
-            // 	mux_msg.data[i] = int(mux_controller[i]);
-            // }
-            // mux_pub.publish(mux_msg);
+            // make mux message
+            std_msgs::Int32MultiArray mux_msg;
+            mux_msg.data.clear();
+
+            // push data onto message
+            for (int i = 0; i < mux_size; i++) {
+            	mux_msg.data.push_back(int(mux_controller[i]));
+            }
+
+            // publish mux message
+            mux_pub.publish(mux_msg);
 
 
 
@@ -596,11 +601,6 @@ public:
                 std::cout << std::endl;
             }
 
-            std::cout << "max_vel: " << max_speed << std::endl;
-            std::cout << "max_accel: " << max_accel << std::endl;
-            std::cout << "vel: " << state.velocity << std::endl;
-            std::cout << "accel: " << accel << std::endl;
-            std::cout << std::endl;
 
             // Update the pose
             ros::Time timestamp = ros::Time::now();
@@ -817,6 +817,7 @@ public:
                             std::cout << "Collision!" << std::endl;
                             std::cout << "Angle: " << angle << std::endl;
                             std::cout << "TTC: " << ttc << std::endl << std::endl;
+                            ROS_INFO("Collision detected"); // add more info here, maybe use throttle
                         }
 
                     }
@@ -847,7 +848,7 @@ public:
 
 
 
-                coll_msg.dr_assist_active = dr_assist_on && (!TTC);
+                coll_msg.copilot_active = safety_copilot_on && (!TTC);
                 coll_msg.speed = state.velocity;
                 coll_pub.publish(coll_msg);
 
@@ -999,19 +1000,19 @@ public:
 
 
             // changing mux_controller:
-            if (msg.buttons[assist_button_idx]) {
-                if (dr_assist_on) {
-                    std::cout << "Driver Assist turned off" << std::endl;
-                    dr_assist_on = false;
-                    // switch control to previous controller if driver assist was on
-                    if (mux_controller[dr_assist_mux_idx]) {
-                        mux_controller[dr_assist_mux_idx] = false;
+            if (msg.buttons[copilot_button_idx]) {
+                if (safety_copilot_on) {
+                    std::cout << "Safety Copilot turned off" << std::endl;
+                    safety_copilot_on = false;
+                    // switch control to previous controller if safety copilot was on
+                    if (mux_controller[safety_copilot_mux_idx]) {
+                        mux_controller[safety_copilot_mux_idx] = false;
                         mux_controller[prev_controller_idx] = true;
                     }
                 }
                 else {
-                    std::cout << "Driver Assist turned on" << std::endl;
-                    dr_assist_on = true;
+                    std::cout << "Safety Copilot turned on" << std::endl;
+                    safety_copilot_on = true;
                 }
             }
             else if (msg.buttons[joy_button_idx]) {
@@ -1032,11 +1033,11 @@ public:
         }
 
         void coll_callback(const racecar_simulator::Collision & msg) {
-            // change mux controller so driver assist takes over
-            if (dr_assist_on && msg.in_danger && !TTC) {
+            // change mux controller so safety copilot takes over
+            if (safety_copilot_on && msg.in_danger && !TTC) {
                 // turn off prev controller and remember its index
                 for (int i = 0; i < mux_size; i++) {
-                    if (i == dr_assist_mux_idx)
+                    if (i == safety_copilot_mux_idx)
                         continue;
                     if (mux_controller[i]) {
                         prev_controller_idx = i;
@@ -1044,17 +1045,17 @@ public:
                         break;
                     }
                 }
-                mux_controller[dr_assist_mux_idx] = true;
+                mux_controller[safety_copilot_mux_idx] = true;
             }
 
             // if no longer in danger, give control back to previous controller
-            if (!msg.in_danger && mux_controller[dr_assist_mux_idx]) {
+            if (!msg.in_danger && mux_controller[safety_copilot_mux_idx]) {
                 mux_controller[prev_controller_idx] = true;
-                mux_controller[dr_assist_mux_idx] = false;
+                mux_controller[safety_copilot_mux_idx] = false;
             }
 
 
-            // assisting done in separate driver assist node
+            // computation done in separate safety copilot node
         }
 
 

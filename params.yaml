@@ -48,17 +48,17 @@ coll_threshold: 0.4
 # Indices for mux controller
 mux_size: 4
 joy_mux_idx: 0
-dr_assist_mux_idx: 1
+safety_copilot_mux_idx: 1
 unused_idx1: 2
-unused_idx2: 3
+random_walker_mux_idx: 3
 
 # Enables joystick if true
 joy: true
 # Joystick indices
 joy_button_idx: 4  # LB button
-assist_button_idx: 1 # A button
+copilot_button_idx: 0 # A button
 joy_speed_axis: 1
-joy_angle_axis: 2
+joy_angle_axis: 3
 joy_max_speed: 2. # meters/second
 
 # map-collision parameters
