@@ -9,14 +9,14 @@ max_speed: 3. #  meters/second
 max_steering_angle: 0.4189 # radians
 max_accel: 2. # meters/second^2
 max_steering_vel: 2.0 # radians/second
-friction_coeff: 1.0 # -
-height_cg: .0762 # m
-l_cg2rear: .1651 # m
-l_cg2front: .1651 # m
-C_S_front: .95 # 1/rad ? (estimated weight/4)
-C_S_rear: .95 # 1/rad ? (estimated weight/4)
-mass: 3.62 # kg (estimated 8 pounds)
-moment_inertia: .018143 # kg m^2 (estimated as a disk with radius = .1 m)
+friction_coeff: 1. # - (complete estimate)
+height_cg: 0.08255 # m (roughly measured to be 3.25 in)
+l_cg2rear: 0.17145 # m (decently measured to be 6.75 in)
+l_cg2front: 0.15875 # m (decently measured to be 6.25 in)
+C_S_front: .79 # 1/rad ? (estimated weight/4)
+C_S_rear: .79 # 1/rad ? (estimated weight/4)
+mass: 3.17 # kg (measured on car 'lidart')
+moment_inertia: .0398378 # kg m^2 (estimated as a rectangle with width and height of car and evenly distributed mass, then shifted to account for center of mass location)
 
 # The rate at which the pose and the lidar publish
 update_pose_rate: 0.001
@@ -43,7 +43,7 @@ map_free_threshold: 0.8
 ttc_threshold: 0.01
 
 # Safety margin for collision avoidance assisted driving
-coll_threshold: 0.4
+coll_threshold: 0.6
 
 # Indices for mux controller
 mux_size: 4
@@ -56,9 +56,10 @@ random_walker_mux_idx: 3
 joy: true
 # Joystick indices
 joy_button_idx: 4  # LB button
-copilot_button_idx: 0 # A button
+copilot_button_idx: 1 # A button
+random_walk_button_idx: 5 # RB button
 joy_speed_axis: 1
-joy_angle_axis: 3
+joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
 
 # map-collision parameters
@@ -80,6 +81,9 @@ pose_rviz_topic: "/initialpose"
 collision_topic: "/coll"
 mux_topic: "/mux"
 
+
+# name of file to write collision log to 
+collision_file: "collision_file"
 
 
 # The names of opponent car's topics to listen and publish to
