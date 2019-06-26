@@ -74,18 +74,28 @@ public:
         ackermann_msgs::AckermannDriveStamped drive_st_msg;
         ackermann_msgs::AckermannDrive drive_msg;
 
+        /// SPEED CALCULATION:
         // set constant speed to be half of max speed
         drive_msg.speed = max_speed / 2.0;
 
 
+        /// STEERING ANGLE CALCULATION
         // random number between 0 and 1
         double random = ((double) rand() / RAND_MAX);
         // good range to cause lots of turning
         double range = max_steering_angle / 2.0;
         // compute random amount to change desired angle by (between -range and range)
-        double rand_ang = range * random - range / 2.0;;
+        double rand_ang = range * random - range / 2.0;
 
-        // set angle
+        // sometimes change sign so it turns more (basically add bias to continue turning in current direction)
+        random = ((double) rand() / RAND_MAX);
+        if ((random > .8) && (prev_angle != 0)) {
+        	double sign_rand = rand_ang / std::abs(rand_ang);
+        	double sign_prev = prev_angle / std::abs(prev_angle);
+        	rand_ang *= sign_rand * sign_prev;
+        }
+
+        // set angle (add random change to previous angle)
         drive_msg.steering_angle = std::min(std::max(prev_angle + rand_ang, -max_steering_angle), max_steering_angle);
 
         // reset previous desired angle
