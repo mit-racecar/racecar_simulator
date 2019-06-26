@@ -24,18 +24,6 @@ CarState KSKinematics::update(
     double steer_ang_dot = steer_angle_vel;
     double theta_dot = start.velocity / p.wheelbase * std::tan(start.steer_angle);
 
-
-    // crude friction calc
-    double friction_term = 0;
-    if (start.velocity > 0) {
-        friction_term = -p.friction_coeff;
-    } else if (start.velocity < 0) {
-        friction_term = p.friction_coeff;
-    }
-
-    double fr_factor = .1;
-    v_dot += fr_factor * friction_term;
-
     // update state
     end.x = start.x + x_dot * dt;
     end.y = start.y + y_dot * dt;

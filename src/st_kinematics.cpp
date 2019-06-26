@@ -71,17 +71,6 @@ CarState STKinematics::update(
             start.angular_velocity;
 
 
-    // crude friction calc (should be rolling friction)
-    //    double friction_term = 0;
-    //    if (start.velocity > 0) {
-    //        friction_term = -p.friction_coeff;
-    //    } else if (start.velocity < 0) {
-    //        friction_term = p.friction_coeff;
-    //    }
-    //    double fr_factor = .1;
-    //    v_dot += fr_factor * friction_term;
-
-
     // update state
     end.x = start.x + x_dot * dt;
     end.y = start.y + y_dot * dt;
@@ -91,27 +80,6 @@ CarState STKinematics::update(
     end.angular_velocity = start.angular_velocity + theta_double_dot * dt;
     end.slip_angle = start.slip_angle + slip_angle_dot * dt;
     end.st_dyn = true;
-
-
-    //    std::cout << "start x:           " << start.x << std::endl;
-    //    std::cout << "start y:           " << start.y << std::endl;
-    //    std::cout << "start theta:       " << start.theta << std::endl;
-    //    std::cout << "start velocity:    " << start.velocity << std::endl;
-    //    std::cout << "start steer angle: " << start.steer_angle << std::endl;
-    //    std::cout << "start ang vel:     " << start.angular_velocity << std::endl;
-    //    std::cout << "start slip angle:  " << start.slip_angle << std::endl;
-
-
-    //    std::cout << "x dot:                 " << x_dot << std::endl;
-    //    std::cout << "y dot:                 " << y_dot << std::endl;
-    //    std::cout << "theta dot:             " << theta_dot << std::endl;
-    //    std::cout << "v dot (input):         " << v_dot << std::endl;
-    //    std::cout << "steer ang dot (input): " << steer_angle_dot << std::endl;
-    //    std::cout << "theta double dot:      " << theta_double_dot << std::endl;
-    //    std::cout << "slip ang dot:          " << slip_angle_dot << std::endl;
-
-    //    std::cout << std::endl;
-
 
     return end;
 }
@@ -125,8 +93,6 @@ CarState STKinematics::update_k(
 
     CarState end;
 
-//    std::cout << "update_k is called" << std::endl;
-
 
     // compute first derivatives of state
     double x_dot = start.velocity * std::cos(start.theta);
@@ -137,17 +103,6 @@ CarState STKinematics::update_k(
     double theta_double_dot = accel / p.wheelbase * std::tan(start.steer_angle) +
             start.velocity * steer_angle_vel / (p.wheelbase * std::pow(std::cos(start.steer_angle), 2));
     double slip_angle_dot = 0;
-
-
-    // crude friction calc (should be rolling friction)
-    //    double friction_term = 0;
-    //    if (start.velocity > 0) {
-    //        friction_term = -p.friction_coeff;
-    //    } else if (start.velocity < 0) {
-    //        friction_term = p.friction_coeff;
-    //    }
-    //    double fr_factor = .1;
-    //    v_dot += fr_factor * friction_term;
 
 
     // update state
