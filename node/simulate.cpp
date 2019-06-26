@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 
 // interactive marker
 #include <interactive_markers/interactive_marker_server.h>
@@ -37,6 +38,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <fstream>
 
 
 using namespace racecar_simulator;
@@ -81,7 +83,7 @@ private:
     // Joystick parameters
     int joy_speed_axis, joy_angle_axis;
     double joy_max_speed;
-    int joy_button_idx, copilot_button_idx;
+    int joy_button_idx, copilot_button_idx, random_walk_button_idx;
 
     // A ROS node
     ros::NodeHandle n;
@@ -182,14 +184,18 @@ private:
     // publish mux controller
     ros::Publisher mux_pub;
 
+    // for collision logging
+    std::ofstream collision_file;
+    double beginning_seconds;
+    int collision_count=0;
 
 
 public:
 
+
     RacecarSimulator(): im_server("racecar_sim") {
         // Initialize the node handle
         n = ros::NodeHandle("~");
-
 
         // Initialize car state and driving commands
         state = {.x=0, .y=0, .theta=0, .velocity=0, .steer_angle=0.0, .angular_velocity=0.0, .slip_angle=0.0, .st_dyn=false};
@@ -269,6 +275,7 @@ public:
         n.getParam("joy_max_speed", joy_max_speed);
         n.getParam("joy_button_idx", joy_button_idx);
         n.getParam("copilot_button_idx", copilot_button_idx);
+        n.getParam("random_walk_button_idx", random_walk_button_idx);
 
         // Determine if we should broadcast
         n.getParam("broadcast_transform", broadcast_transform);
@@ -511,6 +518,13 @@ public:
 
         mux_pub = n.advertise<std_msgs::Int32MultiArray>(mux_topic, 10);
 
+        std::string filename;
+        n.getParam("collision_file", filename);
+        collision_file.open(ros::package::getPath("racecar_simulator") + "/logs/" + filename + ".txt");
+
+        ros::Time timestamp = ros::Time::now();
+        beginning_seconds = timestamp.toSec();
+
     }
 
 
@@ -590,15 +604,24 @@ public:
 
             // Prints the mux whenever it is changed
             bool changed = false;
+            // checks if nothing is on
+            bool anything_on = false;
             for (int i = 0; i < mux_size; i++) {
                 changed = changed || (mux_controller[i] != prev_mux[i]);
+                anything_on = anything_on || mux_controller[i];
             }
             if (changed) {
+                std::cout << "MUX: " << std::endl;
                 for (int i = 0; i < mux_size; i++) {
                     std::cout << mux_controller[i] << std::endl;
                     prev_mux[i] = mux_controller[i];
                 }
                 std::cout << std::endl;
+            }
+            if (!anything_on) {
+                // if no mux channel is active, halt the car
+                set_accel(compute_accel(0.0));
+                set_steer_angle_vel(compute_steer_vel(0.0));
             }
 
 
@@ -677,9 +700,8 @@ public:
             odom.pose.pose.orientation.z = quat.z();
             odom.pose.pose.orientation.w = quat.w();
             odom.twist.twist.linear.x = state.velocity;
-            odom.twist.twist.angular.z =
-                    AckermannKinematics::angular_velocity(state.velocity, state.steer_angle, params.wheelbase);
-            // **** CHANGE TO NEW ANGULAR VELOCITY DYNAMICS*****
+            odom.twist.twist.angular.z = state.angular_velocity;
+            
 
             // opponent odom message
             nav_msgs::Odometry op_odom;
@@ -693,9 +715,7 @@ public:
             op_odom.pose.pose.orientation.z = op_quat.z();
             op_odom.pose.pose.orientation.w = op_quat.w();
             op_odom.twist.twist.linear.x = opponent_pose.velocity;
-            op_odom.twist.twist.angular.z =
-                    AckermannKinematics::angular_velocity(opponent_pose.velocity, opponent_pose.steer_angle, params.wheelbase);
-
+            op_odom.twist.twist.angular.z = state.angular_velocity;
 
             // Publish them
             if (broadcast_transform) {
@@ -790,7 +810,6 @@ public:
                     op_scan_[i] = op_scan[i];
 
 
-
                 // Publish to collision channel
                 racecar_simulator::Collision coll_msg;
                 coll_msg.in_danger = false;
@@ -812,12 +831,18 @@ public:
                                 first_ttc_actions();
                             }
 
+                            collision_count++;
                             no_collision = false;
                             TTC = true;
-                            std::cout << "Collision!" << std::endl;
+                            ROS_INFO("Collision detected");
                             std::cout << "Angle: " << angle << std::endl;
                             std::cout << "TTC: " << ttc << std::endl << std::endl;
-                            ROS_INFO("Collision detected"); // add more info here, maybe use throttle
+                            collision_file << "Collision #" << collision_count << " detected:\n";
+                            collision_file << "TTC: " << ttc << " seconds\n";
+                            collision_file << "Angle to obstacle: " << angle << " radians\n";
+                            collision_file << "Time since start of sim: " << (current_seconds - beginning_seconds) << " seconds\n";
+                            collision_file << "\n";
+                            
                         }
 
                     }
@@ -910,15 +935,16 @@ public:
             steer_angle_vel = 0.0;
             accel = 0.0;
 
-            // kill mux (except joystick)
+            // kill mux
             for (int i = 0; i < mux_size; i++) {
-                if (i == joy_mux_idx)
-                    continue;
                 mux_controller[i] = false;
             }
 
             // turn on joystick if active
             mux_controller[joy_mux_idx] = joy_on;
+
+            // turn off safety copilot
+            safety_copilot_on = false;
         }
 
 
@@ -1002,7 +1028,7 @@ public:
             // changing mux_controller:
             if (msg.buttons[copilot_button_idx]) {
                 if (safety_copilot_on) {
-                    std::cout << "Safety Copilot turned off" << std::endl;
+                    std::cout << "Safety Copilot turned off" << std::endl << std::endl;
                     safety_copilot_on = false;
                     // switch control to previous controller if safety copilot was on
                     if (mux_controller[safety_copilot_mux_idx]) {
@@ -1011,13 +1037,13 @@ public:
                     }
                 }
                 else {
-                    std::cout << "Safety Copilot turned on" << std::endl;
+                    std::cout << "Safety Copilot turned on" << std::endl << std::endl;
                     safety_copilot_on = true;
                 }
             }
             else if (msg.buttons[joy_button_idx]) {
                 if (joy_on) {
-                    std::cout << "Joystick turned off" << std::endl;
+                    std::cout << "Joystick turned off" << std::endl << std::endl;
                     joy_on = false;
                     mux_controller[joy_mux_idx] = false;
                     // previous controller on ?
@@ -1025,9 +1051,32 @@ public:
                     // have some other idea when there's actually something else
                 }
                 else {
-                    std::cout << "Joystick turned on" << std::endl;
+                    std::cout << "Joystick turned on" << std::endl << std::endl;
                     joy_on = true;
+                    // turn everything off
+                    for (int i = 0; i < mux_size; i++) {
+                        mux_controller[i] = false;
+                    }
+                    // turn on joystick
                     mux_controller[joy_mux_idx] = true;
+                }
+            }
+            else if (msg.buttons[random_walk_button_idx]) {
+                if (mux_controller[random_walker_mux_idx]) {
+                    std::cout << "Random Walk turned off" << std::endl << std::endl;
+                    // turn off random walker
+                    mux_controller[random_walker_mux_idx] = false;
+                    // turn on joystick if it's active
+                    mux_controller[joy_mux_idx] = joy_on;
+                }
+                else {
+                    std::cout << "Random Walk turned on" << std::endl << std::endl;
+                    // turn everything off
+                    for (int i = 0; i < mux_size; i++) {
+                        mux_controller[i] = false;
+                    }
+                    // turn on random walker
+                    mux_controller[random_walker_mux_idx] = true; 
                 }
             }
         }
