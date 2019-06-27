@@ -49,18 +49,24 @@ coll_threshold: 0.6
 mux_size: 4
 joy_mux_idx: 0
 safety_copilot_mux_idx: 1
-unused_idx1: 2
+unused_idx: 2
 random_walker_mux_idx: 3
+# **Add index for new planning method here**
+# **(increase mux_size accordingly)**
+new_method_mux_idx: -1
 
 # Enables joystick if true
 joy: true
 # Joystick indices
-joy_button_idx: 4  # LB button
-copilot_button_idx: 1 # A button
-random_walk_button_idx: 5 # RB button
 joy_speed_axis: 1
-joy_angle_axis: 2
+joy_angle_axis: 3
 joy_max_speed: 2. # meters/second
+# Indices for mux
+joy_button_idx: 4  # LB button
+copilot_button_idx: 0 # A button
+random_walk_button_idx: 5 # RB button
+# **Add button for new planning method here**
+new_button_idx: -1
 
 # map-collision parameters
 inflation_size: 5
