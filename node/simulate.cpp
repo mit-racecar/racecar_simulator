@@ -576,25 +576,20 @@ public:
         void update_pose(const ros::TimerEvent&) {
 
 
-            // if in collision
-            if (TTC) {
 
-            }
-
+            /// **** MOVE TO: behavior control node *** 
             // make mux message
             std_msgs::Int32MultiArray mux_msg;
             mux_msg.data.clear();
-
             // push data onto message
             for (int i = 0; i < mux_size; i++) {
             	mux_msg.data.push_back(int(mux_controller[i]));
             }
-
             // publish mux message
             mux_pub.publish(mux_msg);
 
 
-
+            /// KEEP in sim, but compute accel and steer angle vel every update
             // set latest joystick commands
             if (mux_controller[joy_mux_idx]) {
                 set_accel(compute_accel(joy_desired_velocity));
@@ -602,6 +597,7 @@ public:
             }
 
 
+            /// KEEP in sim
             // Prints the mux whenever it is changed
             bool changed = false;
             // checks if nothing is on
@@ -625,6 +621,7 @@ public:
             }
 
 
+            /// KEEP in sim
             // Update the pose
             ros::Time timestamp = ros::Time::now();
             double current_seconds = timestamp.toSec();
@@ -650,7 +647,7 @@ public:
             previous_seconds = current_seconds;
 
 
-
+            /// KEEP in sim (helper function)
             // Convert the pose into a transformation
             geometry_msgs::Transform t;
             t.translation.x = state.x;
@@ -688,6 +685,7 @@ public:
             op_ts.header.frame_id = map_frame;
             op_ts.child_frame_id = op_base_frame;
 
+            /// KEEP in sim (helper function)
             // Make an odom message as well
             nav_msgs::Odometry odom;
             odom.header.stamp = timestamp;
@@ -717,6 +715,7 @@ public:
             op_odom.twist.twist.linear.x = opponent_pose.velocity;
             op_odom.twist.twist.angular.z = state.angular_velocity;
 
+            /// KEEP in sim (helper function)
             // Publish them
             if (broadcast_transform) {
                 br.sendTransform(ts);
@@ -725,6 +724,7 @@ public:
             odom_pub.publish(odom);
             op_odom_pub.publish(op_odom);
 
+            /// KEEP in sim (helper function)
             // Set the steering angle to make the wheels move
             // Publish the steering angle
             tf2::Quaternion quat_wheel;
@@ -760,7 +760,7 @@ public:
 
 
 
-
+            /// KEEP in sim
             // If we have a map, perform a scan
             if (map_exists) {
                 // Get the pose of the lidar, given the pose of base link
@@ -810,6 +810,7 @@ public:
                     op_scan_[i] = op_scan[i];
 
 
+                /// KEEP in sim (but update all this stuff at some point) (Make TTC message)
                 // Publish to collision channel
                 racecar_simulator::Collision coll_msg;
                 coll_msg.in_danger = false;
@@ -861,22 +862,15 @@ public:
                     }
                 }
 
-                // opponent collision (not used for now)
-                //             if (!TTC &  check_opponent_collision() {
-                //               first_ttc_actions();
-                //             }
-
-
                 // reset TTC
                 if (no_collision)
                     TTC = false;
-
-
 
                 coll_msg.copilot_active = safety_copilot_on && (!TTC);
                 coll_msg.speed = state.velocity;
                 coll_pub.publish(coll_msg);
 
+                /// KEEP in sim
                 // Publish the laser message
                 sensor_msgs::LaserScan scan_msg;
                 scan_msg.header.stamp = timestamp;
@@ -903,7 +897,7 @@ public:
                 op_scan_pub.publish(op_scan_msg);
 
 
-
+                /// KEEP in sim (helper function)
                 // Publish a transformation between base link and laser
                 geometry_msgs::TransformStamped scan_ts;
                 scan_ts.transform.translation.x = scan_distance_to_base_link;
@@ -921,8 +915,9 @@ public:
                 op_scan_ts.child_frame_id = op_scan_frame;
                 op_br.sendTransform(op_scan_ts);
             }
-        }
+        } //end of update_pose
 
+        /// KEEP in sim
         void first_ttc_actions() {
             joy_desired_velocity = 0.0;
             joy_desired_steer = 0.0;
@@ -947,7 +942,7 @@ public:
             safety_copilot_on = false;
         }
 
-
+        /// KEEP in sim
         void project_opponent() {
             // clear projection from last frame
             double prev_x = previous_opponent_pose.x;
@@ -962,7 +957,7 @@ public:
             add_obs(ind);
         }
 
-
+        /// KEEP in sim
         void obs_callback(const geometry_msgs::PointStamped &msg) {
             double x = msg.point.x;
             double y = msg.point.y;
@@ -973,7 +968,7 @@ public:
         }
 
 
-
+        /// KEEP in sim
         void pose_callback(const geometry_msgs::PoseStamped & msg) {
             state.x = msg.pose.position.x;
             state.y = msg.pose.position.y;
@@ -983,7 +978,7 @@ public:
         }
 
 
-
+        /// KEEP in sim
         void op_pose_callback(const geometry_msgs::PoseStamped &msg) {
             opponent_pose.x = msg.pose.position.x;
             opponent_pose.y = msg.pose.position.y;
@@ -992,6 +987,7 @@ public:
             opponent_pose.theta = tf2::impl::getYaw(quat);
         }
 
+        /// KEEP in sim
         void pose_rviz_callback(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr & msg) {
 
             geometry_msgs::PoseStamped temp_pose;
@@ -1000,21 +996,25 @@ public:
             pose_callback(temp_pose);
         }
 
+        /// KEEP in sim
         void op_pose_rviz_callback(const geometry_msgs::PoseStamped::ConstPtr &msg) {
             op_pose_callback(*msg);
 
         }
 
+        /// KEEP in sim
         void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg) {
             set_accel(compute_accel(msg.drive.speed));
             set_steer_angle_vel(compute_steer_vel(msg.drive.steering_angle));
         }
 
+        /// KEEP in sim
         void op_drive_callback(const ackermann_msgs::AckermannDriveStamped &msg) {
             set_op_accel(msg.drive.speed);
             set_op_steer_angle_vel(compute_steer_vel(msg.drive.steering_angle));
         }
 
+        /// MOVE TO: behavior control node
         void joy_callback(const sensor_msgs::Joy & msg) {
 
             // joy controller:
@@ -1081,6 +1081,7 @@ public:
             }
         }
 
+        /// MOVE TO: behavioral control node
         void coll_callback(const racecar_simulator::Collision & msg) {
             // change mux controller so safety copilot takes over
             if (safety_copilot_on && msg.in_danger && !TTC) {
@@ -1103,19 +1104,20 @@ public:
                 mux_controller[safety_copilot_mux_idx] = false;
             }
 
-
             // computation done in separate safety copilot node
         }
 
-
+        /// KEEP in sim
         void set_accel(double accel_) {
             accel = std::min(std::max(accel_, -max_accel), max_accel);
         }
 
+        /// KEEP in sim
         void set_steer_angle_vel(double steer_angle_vel_) {
             steer_angle_vel = std::min(std::max(steer_angle_vel_, -max_steering_vel), max_steering_vel);
         }
 
+        /// KEEP in sim
         void add_obs(int ind) {
             std::vector<int> rc = ind_2_rc(ind);
             for (int i=-obstacle_size; i<obstacle_size; i++) {
@@ -1129,6 +1131,7 @@ public:
             map_pub.publish(current_map);
         }
 
+        /// KEEP in sim
         void clear_obs(int ind) {
             std::vector<int> rc = ind_2_rc(ind);
             for (int i=-obstacle_size; i<obstacle_size; i++) {
@@ -1143,7 +1146,8 @@ public:
             map_pub.publish(current_map);
         }
 
-        // button callbaccks
+        /// KEEP in sim
+        // button callbacks
         void clear_obstacles(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
             bool clear_obs_clicked = false;
             if (feedback->event_type == 3) {
@@ -1157,6 +1161,8 @@ public:
                 clear_obs_clicked = false;
             }
         }
+
+        /// KEEP in sim
         void spawn_car(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
             bool spawn_car_clicked = false;
             if (feedback->event_type == 3) {
@@ -1168,6 +1174,8 @@ public:
                 opponent_spawned = true;
             }
         }
+
+        /// KEEP in sim
         void despawn_car(const visualization_msgs::InteractiveMarkerFeedbackConstPtr &feedback) {
             bool despawn_car_clicked = false;
             if (feedback->event_type == 3) {
@@ -1180,55 +1188,17 @@ public:
             }
         }
 
-
+        /// KEEP in sim
         void set_op_accel(double accel_) {
             opponent_accel = std::min(std::max(accel_, -max_accel), max_accel);
         }
 
-//        void set_steering_angle(double steering_angle_, ros::Time timestamp) {
-//            steering_angle = std::min(std::max(steering_angle_, -max_steering_angle), max_steering_angle);
-
-//            // Publish the steering angle
-//            tf2::Quaternion quat;
-//            quat.setEuler(0., 0., steering_angle);
-//            geometry_msgs::TransformStamped ts;
-//            ts.transform.rotation.x = quat.x();
-//            ts.transform.rotation.y = quat.y();
-//            ts.transform.rotation.z = quat.z();
-//            ts.transform.rotation.w = quat.w();
-//            ts.header.stamp = timestamp;
-//            ts.header.frame_id = "front_left_hinge";
-//            ts.child_frame_id = "front_left_wheel";
-//            br.sendTransform(ts);
-//            ts.header.frame_id = "front_right_hinge";
-//            ts.child_frame_id = "front_right_wheel";
-//            br.sendTransform(ts);
-//        }
-
+        /// KEEP in sim
         void set_op_steer_angle_vel(double steer_angle_vel_) {
             opponent_steer_angle_vel = std::min(std::max(steer_angle_vel_, -max_steering_vel), max_steering_vel);
         }
 
-//        void set_op_steering_angle(double steering_angle_, ros::Time timestamp) {
-//            opponent_pose.steer_angle = std::min(std::max(steering_angle_, -max_steering_angle), max_steering_angle);
-
-//            // Publish the steering angle
-//            tf2::Quaternion quat;
-//            quat.setEuler(0., 0., steering_angle);
-//            geometry_msgs::TransformStamped ts;
-//            ts.transform.rotation.x = quat.x();
-//            ts.transform.rotation.y = quat.y();
-//            ts.transform.rotation.z = quat.z();
-//            ts.transform.rotation.w = quat.w();
-//            ts.header.stamp = timestamp;
-//            ts.header.frame_id = "op_front_left_hinge";
-//            ts.child_frame_id = "op_front_left_wheel";
-//            op_br.sendTransform(ts);
-//            ts.header.frame_id = "op_front_right_hinge";
-//            ts.child_frame_id = "op_front_right_wheel";
-//            op_br.sendTransform(ts);
-//        }
-
+        /// KEEP in sim
         void map_callback(const nav_msgs::OccupancyGrid & msg) {
             // Fetch the map parameters
             size_t height = msg.info.height;
@@ -1263,6 +1233,7 @@ public:
             map_exists = true;
         }
 
+        /// KEEP in sim
         double compute_steer_vel(double desired_angle) {
             // get difference between current and desired
             double dif = (desired_angle - state.steer_angle);
@@ -1278,6 +1249,7 @@ public:
             return steer_vel;
         }
 
+        /// KEEP in sim
         double compute_accel(double desired_velocity) {
             // get difference between current and desired
             double dif = (desired_velocity - state.velocity);
