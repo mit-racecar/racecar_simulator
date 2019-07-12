@@ -17,7 +17,7 @@ using namespace racecar_simulator;
 
 class BehaviorController {
 private:
-	// A ROS node
+    // A ROS node
     ros::NodeHandle n;
 
     // Listen for messages from joystick, keyboard, laser scan, odometry, and IMU
@@ -62,37 +62,37 @@ private:
     racecar_simulator::CarState state;
 
     // precompute distance from lidar to edge of car for each beam
-	std::vector<double> car_distances;
+    std::vector<double> car_distances;
 
-	// precompute cosines of scan angles
-	std::vector<double> cosines;
+    // precompute cosines of scan angles
+    std::vector<double> cosines;
 
-	// for collision detection
-	double ttc_threshold;
-	bool in_collision=false;
+    // for collision detection
+    double ttc_threshold;
+    bool in_collision=false;
 
-	// for collision logging
-	std::ofstream collision_file;
-	double beginning_seconds;
-	int collision_count=0;
+    // for collision logging
+    std::ofstream collision_file;
+    double beginning_seconds;
+    int collision_count=0;
 
 
 
 public:
-	BehaviorController() {
-		// Initialize the node handle
-		n = ros::NodeHandle("~");
+    BehaviorController() {
+        // Initialize the node handle
+        n = ros::NodeHandle("~");
 
-		// get topic names
-		std::string scan_topic, odom_topic, imu_topic, joy_topic, keyboard_topic, mux_topic;
-		n.getParam("scan_topic", scan_topic);
-		n.getParam("odom_topic", odom_topic);
-		n.getParam("imu_topic", imu_topic);
-		n.getParam("joy_topic", joy_topic);
-		n.getParam("mux_topic", mux_topic);
-		n.getParam("keyboard_topic", keyboard_topic);
+        // get topic names
+        std::string scan_topic, odom_topic, imu_topic, joy_topic, keyboard_topic, mux_topic;
+        n.getParam("scan_topic", scan_topic);
+        n.getParam("odom_topic", odom_topic);
+        n.getParam("imu_topic", imu_topic);
+        n.getParam("joy_topic", joy_topic);
+        n.getParam("mux_topic", mux_topic);
+        n.getParam("keyboard_topic", keyboard_topic);
 
-		// Make a publisher for mux messages
+        // Make a publisher for mux messages
         mux_pub = n.advertise<std_msgs::Int32MultiArray>(mux_topic, 10);
 
         // Start subscribers to listen to laser scan, joy, IMU, and odom messages
@@ -147,203 +147,203 @@ public:
 
         // Precompute cosine and distance to car at each angle of the laser scan
         cosines = Precompute::get_cosines(scan_beams, -scan_fov/2.0, scan_ang_incr);
-		car_distances = Precompute::get_car_distances(scan_beams, wheelbase, width, 
-				scan_distance_to_base_link, -scan_fov/2.0, scan_ang_incr);
+        car_distances = Precompute::get_car_distances(scan_beams, wheelbase, width, 
+                scan_distance_to_base_link, -scan_fov/2.0, scan_ang_incr);
 
-		// Create collision file to be written to
-		std::string filename;
-		n.getParam("collision_file", filename);
-		collision_file.open(ros::package::getPath("racecar_simulator") + "/logs/" + filename + ".txt");
-		beginning_seconds = ros::Time::now().toSec();
+        // Create collision file to be written to
+        std::string filename;
+        n.getParam("collision_file", filename);
+        collision_file.open(ros::package::getPath("racecar_simulator") + "/logs/" + filename + ".txt");
+        beginning_seconds = ros::Time::now().toSec();
 
-	}
+    }
 
-	/// ---------------------- GENERAL HELPER FUNCTIONS ----------------------
+    /// ---------------------- GENERAL HELPER FUNCTIONS ----------------------
 
-	void publish_mux() {
-		// make mux message
-		std_msgs::Int32MultiArray mux_msg;
-		mux_msg.data.clear();
+    void publish_mux() {
+        // make mux message
+        std_msgs::Int32MultiArray mux_msg;
+        mux_msg.data.clear();
         // push data onto message
-		for (int i = 0; i < mux_size; i++) {
-			mux_msg.data.push_back(int(mux_controller[i]));
-		}
+        for (int i = 0; i < mux_size; i++) {
+            mux_msg.data.push_back(int(mux_controller[i]));
+        }
 
         // publish mux message
-		mux_pub.publish(mux_msg);
-	}
+        mux_pub.publish(mux_msg);
+    }
 
-	void change_controller(int controller_idx) {
-		// This changes the controller to the input index and publishes it
+    void change_controller(int controller_idx) {
+        // This changes the controller to the input index and publishes it
 
-		if (mux_controller[safety_copilot_mux_idx]) {
-			// if the safety copilot is active, don't change to anything else
-			return;
-		}
+        if (mux_controller[safety_copilot_mux_idx]) {
+            // if the safety copilot is active, don't change to anything else
+            return;
+        }
 
-		// turn everything off
-		for (int i = 0; i < mux_size; i++) {
-			mux_controller[i] = false;
-		}
+        // turn everything off
+        for (int i = 0; i < mux_size; i++) {
+            mux_controller[i] = false;
+        }
         // turn on desired controller
-		mux_controller[controller_idx] = true;
+        mux_controller[controller_idx] = true;
 
-		publish_mux();
-	}
+        publish_mux();
+    }
 
-	void collision_checker(const sensor_msgs::LaserScan & msg) {
-		// This function calculates TTC to see if there's a collision, and 
-		// if safety copilot should take over
-		if (state.velocity != 0) {
-			for (size_t i = 0; i < msg.ranges.size(); i++) {
-				double angle = msg.angle_min + i * msg.angle_increment;
+    void collision_checker(const sensor_msgs::LaserScan & msg) {
+        // This function calculates TTC to see if there's a collision, and 
+        // if safety copilot should take over
+        if (state.velocity != 0) {
+            for (size_t i = 0; i < msg.ranges.size(); i++) {
+                double angle = msg.angle_min + i * msg.angle_increment;
 
-            	// calculate projected velocity
-				double proj_velocity = state.velocity * cosines[i];
-				double ttc = (msg.ranges[i] - car_distances[i]) / proj_velocity;
+                // calculate projected velocity
+                double proj_velocity = state.velocity * cosines[i];
+                double ttc = (msg.ranges[i] - car_distances[i]) / proj_velocity;
 
-				// if it's small, there's a collision
+                // if it's small, there's a collision
                 if ((ttc < ttc_threshold) && (ttc >= 0.0)) { 
-                	// Send a blank mux and write to file
-                	collision_helper();
+                    // Send a blank mux and write to file
+                    collision_helper();
 
-                	in_collision = true;
+                    in_collision = true;
 
-	                collision_count++;
-	                collision_file << "Collision #" << collision_count << " detected:\n";
-	                collision_file << "TTC: " << ttc << " seconds\n";
-	                collision_file << "Angle to obstacle: " << angle << " radians\n";
-	                collision_file << "Time since start of sim: " << (ros::Time::now().toSec() - beginning_seconds) << " seconds\n";
-	                collision_file << "\n";
-	                return;
-            	}
-        	}
-        	// if it's gone through all beams without detecting a collision, reset in_collision
-        	in_collision = false;
-    	}
-	}
+                    collision_count++;
+                    collision_file << "Collision #" << collision_count << " detected:\n";
+                    collision_file << "TTC: " << ttc << " seconds\n";
+                    collision_file << "Angle to obstacle: " << angle << " radians\n";
+                    collision_file << "Time since start of sim: " << (ros::Time::now().toSec() - beginning_seconds) << " seconds\n";
+                    collision_file << "\n";
+                    return;
+                }
+            }
+            // if it's gone through all beams without detecting a collision, reset in_collision
+            in_collision = false;
+        }
+    }
 
-	void collision_helper() {
-		// This function will turn off safety copilot, clear the mux and publish it
+    void collision_helper() {
+        // This function will turn off safety copilot, clear the mux and publish it
 
-		safety_copilot_on = false;
+        safety_copilot_on = false;
 
-		// turn everything off
-		for (int i = 0; i < mux_size; i++) {
-			mux_controller[i] = false;
-		}
+        // turn everything off
+        for (int i = 0; i < mux_size; i++) {
+            mux_controller[i] = false;
+        }
 
-		publish_mux();
-	}
+        publish_mux();
+    }
 
-	void toggle_mux(int mux_idx, std::string driver_name) {
-		// This takes in an index and the name of the planner/driver and 
-		// toggles the mux appropiately
-		if (mux_controller[mux_idx]) {
-			ROS_INFO_STREAM(driver_name << " turned off");
-			mux_controller[mux_idx] = false;
-			publish_mux();
-		}
-		else {
-			ROS_INFO_STREAM(driver_name << " turned on");
-			change_controller(mux_idx);
-		}
-	}
+    void toggle_mux(int mux_idx, std::string driver_name) {
+        // This takes in an index and the name of the planner/driver and 
+        // toggles the mux appropiately
+        if (mux_controller[mux_idx]) {
+            ROS_INFO_STREAM(driver_name << " turned off");
+            mux_controller[mux_idx] = false;
+            publish_mux();
+        }
+        else {
+            ROS_INFO_STREAM(driver_name << " turned on");
+            change_controller(mux_idx);
+        }
+    }
 
 
-	/// ---------------------- CALLBACK FUNCTIONS ----------------------
+    /// ---------------------- CALLBACK FUNCTIONS ----------------------
 
-	void joy_callback(const sensor_msgs::Joy & msg) {
-		// Changing mux_controller:
-		if (msg.buttons[joy_button_idx]) { 
-			// joystick
-			toggle_mux(joy_mux_idx, "Joystick");
-		}
-		if (msg.buttons[key_button_idx]) { 
-			// keyboard
-			toggle_mux(key_mux_idx, "Keyboard");
-		}
-		else if (msg.buttons[safety_copilot_button_idx]) { 
-			// safety copilot (can't use toggle_mux due to prev_controller stuff)
-			if (safety_copilot_on) {
-				ROS_INFO("Safety Copilot turned off");
-				safety_copilot_on = false;
+    void joy_callback(const sensor_msgs::Joy & msg) {
+        // Changing mux_controller:
+        if (msg.buttons[joy_button_idx]) { 
+            // joystick
+            toggle_mux(joy_mux_idx, "Joystick");
+        }
+        if (msg.buttons[key_button_idx]) { 
+            // keyboard
+            toggle_mux(key_mux_idx, "Keyboard");
+        }
+        else if (msg.buttons[safety_copilot_button_idx]) { 
+            // safety copilot (can't use toggle_mux due to prev_controller stuff)
+            if (safety_copilot_on) {
+                ROS_INFO("Safety Copilot turned off");
+                safety_copilot_on = false;
                 // switch control to previous controller if safety copilot was on
-				if (mux_controller[safety_copilot_mux_idx]) {
-					mux_controller[safety_copilot_mux_idx] = false;
-					change_controller(prev_controller_idx);
-				}
-			}
-			else {
-				ROS_INFO("Safety Copilot turned on");
-				safety_copilot_on = true;
-			}
-		}
-		else if (msg.buttons[random_walk_button_idx]) { 
-			// random walker
-			toggle_mux(random_walker_mux_idx, "Random Walker");
-		}
-		// ***Add new else if statement here for new planning method***
-		// if (msg.buttons[new_button_idx]) {
-		// 	// new planner
-		// 	toggle_mux(new_mux_idx, "New Planner");
-		// }
+                if (mux_controller[safety_copilot_mux_idx]) {
+                    mux_controller[safety_copilot_mux_idx] = false;
+                    change_controller(prev_controller_idx);
+                }
+            }
+            else {
+                ROS_INFO("Safety Copilot turned on");
+                safety_copilot_on = true;
+            }
+        }
+        else if (msg.buttons[random_walk_button_idx]) { 
+            // random walker
+            toggle_mux(random_walker_mux_idx, "Random Walker");
+        }
+        // ***Add new else if statement here for new planning method***
+        // if (msg.buttons[new_button_idx]) {
+        //  // new planner
+        //  toggle_mux(new_mux_idx, "New Planner");
+        // }
 
-	}
+    }
 
-	void key_callback(const std_msgs::String & msg) {
-		// Changing mux controller:
-		if (msg.data == joy_key_char) {
-			// joystick
-			toggle_mux(joy_mux_idx, "Joystick");
-		} else if (msg.data == keyboard_key_char) {
-			// keyboard
-			toggle_mux(key_mux_idx, "Keyboard");
-		} else if (msg.data == copilot_key_char) {
-			// safety copilot (can't use toggle_mux due to prev_controller stuff)
-			if (safety_copilot_on) {
-				ROS_INFO("Safety Copilot turned off");
-				safety_copilot_on = false;
+    void key_callback(const std_msgs::String & msg) {
+        // Changing mux controller:
+        if (msg.data == joy_key_char) {
+            // joystick
+            toggle_mux(joy_mux_idx, "Joystick");
+        } else if (msg.data == keyboard_key_char) {
+            // keyboard
+            toggle_mux(key_mux_idx, "Keyboard");
+        } else if (msg.data == copilot_key_char) {
+            // safety copilot (can't use toggle_mux due to prev_controller stuff)
+            if (safety_copilot_on) {
+                ROS_INFO("Safety Copilot turned off");
+                safety_copilot_on = false;
                 // switch control to previous controller if safety copilot was on
-				if (mux_controller[safety_copilot_mux_idx]) {
-					mux_controller[safety_copilot_mux_idx] = false;
-					change_controller(prev_controller_idx);
-				}
-			}
-			else {
-				ROS_INFO("Safety Copilot turned on");
-				safety_copilot_on = true;
-			}
-		} else if (msg.data == random_walk_key_char) {
-			// random walker
-			toggle_mux(random_walker_mux_idx, "Random Walker");
-		} 
-		// ***Add new else if statement here for new planning method***
-		// if (msg.data == new_key_char) {
-		// 	// new planner
-		// 	toggle_mux(new_mux_idx, "New Planner");
-		// }
+                if (mux_controller[safety_copilot_mux_idx]) {
+                    mux_controller[safety_copilot_mux_idx] = false;
+                    change_controller(prev_controller_idx);
+                }
+            }
+            else {
+                ROS_INFO("Safety Copilot turned on");
+                safety_copilot_on = true;
+            }
+        } else if (msg.data == random_walk_key_char) {
+            // random walker
+            toggle_mux(random_walker_mux_idx, "Random Walker");
+        } 
+        // ***Add new else if statement here for new planning method***
+        // if (msg.data == new_key_char) {
+        //  // new planner
+        //  toggle_mux(new_mux_idx, "New Planner");
+        // }
 
-	}
+    }
 
-	void laser_callback(const sensor_msgs::LaserScan & msg) {
-		// check for a collision
-		collision_checker(msg);
+    void laser_callback(const sensor_msgs::LaserScan & msg) {
+        // check for a collision
+        collision_checker(msg);
 
 
-	}
+    }
 
     void odom_callback(const nav_msgs::Odometry & msg) {
-    	// Keep track of state to be used elsewhere
-    	state.velocity = msg.twist.twist.linear.x;
-    	state.angular_velocity = msg.twist.twist.angular.z;
-    	state.x = msg.pose.pose.position.x;
-    	state.y = msg.pose.pose.position.y;
-	}
+        // Keep track of state to be used elsewhere
+        state.velocity = msg.twist.twist.linear.x;
+        state.angular_velocity = msg.twist.twist.angular.z;
+        state.x = msg.pose.pose.position.x;
+        state.y = msg.pose.pose.position.y;
+    }
 
-	void imu_callback(const sensor_msgs::Imu & msg) {
+    void imu_callback(const sensor_msgs::Imu & msg) {
 
-	}
+    }
 
 
 

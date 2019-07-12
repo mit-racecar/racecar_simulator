@@ -9,7 +9,7 @@ class Mux;
 
 class Channel {
 private:
-	// Publish drive data to simulator/car
+    // Publish drive data to simulator/car
     ros::Publisher drive_pub;
 
     // Listen to drive data from a specific topic
@@ -23,11 +23,11 @@ private:
 
 
 public:
-	Channel();
+    Channel();
 
-	Channel(std::string channel_name, std::string drive_topic, int mux_idx_, Mux* mux);
+    Channel(std::string channel_name, std::string drive_topic, int mux_idx_, Mux* mux);
 
-	void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg);
+    void drive_callback(const ackermann_msgs::AckermannDriveStamped & msg);
 };
 
 

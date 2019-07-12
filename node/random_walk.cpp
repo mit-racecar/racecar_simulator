@@ -16,28 +16,25 @@
 
 class RandomWalker {
 private:
-	// A ROS node
+    // A ROS node
     ros::NodeHandle n;
 
     // car parameters
     double max_speed, max_steering_angle;
 
-    // Listen for mux messages
+    // Listen for odom messages
     ros::Subscriber odom_sub;
 
     // Publish drive data
     ros::Publisher drive_pub;
-
-    // index of random walker on mux
-    int random_walker_mux_idx;
 
     // previous desired steering angle
     double prev_angle=0.0;
 
 
 public:
-	RandomWalker() {
-		// Initialize the node handle
+    RandomWalker() {
+        // Initialize the node handle
         n = ros::NodeHandle("~");
 
         // get topic names
@@ -49,21 +46,17 @@ public:
         n.getParam("max_speed", max_speed);
         n.getParam("max_steering_angle", max_steering_angle);
 
-        // get mux idx to pay attention to
-        n.getParam("random_walker_mux_idx", random_walker_mux_idx);
-
-
         // Make a publisher for drive messages
         drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 10);
 
-        // Start a subscriber to listen to mux messages
+        // Start a subscriber to listen to odom messages
         odom_sub = n.subscribe(odom_topic, 1, &RandomWalker::odom_callback, this);
 
 
-	}
+    }
 
 
-	void odom_callback(const nav_msgs::Odometry & msg) {
+    void odom_callback(const nav_msgs::Odometry & msg) {
         // publishing is done in odom callback just so it's at the same rate as the sim
 
         // initialize message to be published
@@ -86,9 +79,9 @@ public:
         // sometimes change sign so it turns more (basically add bias to continue turning in current direction)
         random = ((double) rand() / RAND_MAX);
         if ((random > .8) && (prev_angle != 0)) {
-        	double sign_rand = rand_ang / std::abs(rand_ang);
-        	double sign_prev = prev_angle / std::abs(prev_angle);
-        	rand_ang *= sign_rand * sign_prev;
+            double sign_rand = rand_ang / std::abs(rand_ang);
+            double sign_prev = prev_angle / std::abs(prev_angle);
+            rand_ang *= sign_rand * sign_prev;
         }
 
         // set angle (add random change to previous angle)
