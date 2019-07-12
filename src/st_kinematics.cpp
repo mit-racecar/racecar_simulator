@@ -18,7 +18,7 @@ CarState STKinematics::update(
 
 
     double thresh = .5; // cut off to avoid singular behavior
-    double err = .03; // to avoid flip flop
+    double err = .03; // deadband to avoid flip flop
     if (!start.st_dyn)
         thresh += err;
 
