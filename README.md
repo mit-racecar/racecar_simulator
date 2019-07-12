@@ -25,7 +25,7 @@ The full list of dependencies can be found in the ```package.xml``` file.
 To install the simulator package, clone it into your catkin workspace:
 
     cd ~/catkin_ws/src
-    git clone https://github.com/jauckley/racecar_simulator.git
+    git clone https://github.com/mlab-upenn/racecar_simulator.git
     
 Then run ```catkin_make``` to build it:
 
