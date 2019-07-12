@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Listen to messages from joysicks -->
+  <node pkg="joy" name="joy_node" type="joy_node"/>
+
+  <!-- Safety Copilot Node -->
+  <node pkg="racecar_simulator" name="safety_copilot" type="safety_copilot" output="screen">
+    <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  </node>
+
+
+  <!-- Random Walker Node -->
+  <node pkg="racecar_simulator" name="random_walker" type="random_walker" output="screen">
+    <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  </node>
+
+
+  <!-- Launch a map from the maps folder-->
+  <arg name="map" default="$(find racecar_simulator)/maps/levine.yaml"/>
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
+
+  <!-- Launch the racecar model -->
+  <include file="$(find racecar_simulator)/launch/racecar_model.launch"/>
+
+  <!-- Begin the simulator with the parameters from params.yaml -->
+  <node pkg="racecar_simulator" name="racecar_simulator" type="simulate" output="screen">
+    <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  </node>
+  <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
+  <node pkg="racecar_simulator" name="scan_converter" type="scan_converter" output="screen">
+    
+  </node>
+
+  
+  <!-- Launch RVIZ -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racecar_simulator)/launch/simulator.rviz" output="screen"/>
+</launch>

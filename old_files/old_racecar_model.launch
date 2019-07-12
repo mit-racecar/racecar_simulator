@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- group for racecar -->
+  <group ns="racecar">
+  <!-- Open the model file -->
+  <arg name="racecar_xacro" default="$(find racecar_simulator)/racecar.xacro"/>
+  <!--<param name="tf_prefix" value="racecar"/>-->
+  <param name="robot_description" command="xacro --inorder '$(arg racecar_xacro)'"/>
+  <!-- Add the transformations -->
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+  </group>
+
+  <!-- group for opponent racecar -->
+  <group ns="opponent">
+  <arg name="op_racecar_xacro" default="$(find racecar_simulator)/opponent_racecar.xacro"/>
+  <!--<param name="tf_prefix" value="opponent_racecar"/>-->
+  <param name="visual_enabled" value="false"/>
+  <param name="robot_description" command="xacro --inorder '$(arg op_racecar_xacro)'"/>
+  <node name="op_robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+  </group>
+</launch>
