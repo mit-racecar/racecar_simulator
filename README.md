@@ -37,7 +37,7 @@ Then run ```catkin_make``` to build it:
 
 To run the simulator on its own, run:
 
-    roslaunch racecar_simulator simulate.launch
+    roslaunch racecar_simulator simulator.launch
 
 This will launch everything you need for a full simulation; roscore, the simulator, a preselected map, a model of the racecar and the joystick server.
 
