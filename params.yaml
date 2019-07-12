@@ -5,16 +5,16 @@ wheelbase: 0.3302 # meters
 width: 0.2032 # meters
 
 # Limits on the speed and steering angle
-max_speed: 3. #  meters/second
+max_speed: 4. #  meters/second
 max_steering_angle: 0.4189 # radians
-max_accel: 2. # meters/second^2
-max_steering_vel: 2.0 # radians/second
+max_accel: 3. # meters/second^2
+max_steering_vel: 5.0 # radians/second
 friction_coeff: 1. # - (complete estimate)
 height_cg: 0.08255 # m (roughly measured to be 3.25 in)
 l_cg2rear: 0.17145 # m (decently measured to be 6.75 in)
 l_cg2front: 0.15875 # m (decently measured to be 6.25 in)
-C_S_front: .79 # 1/rad ? (estimated weight/4)
-C_S_rear: .79 # 1/rad ? (estimated weight/4)
+C_S_front: 2.3 #.79 # 1/rad ? (estimated weight/4)
+C_S_rear: 2.3 #.79 # 1/rad ? (estimated weight/4)
 mass: 3.17 # kg (measured on car 'lidart')
 moment_inertia: .0398378 # kg m^2 (estimated as a rectangle with width and height of car and evenly distributed mass, then shifted to account for center of mass location)
 
@@ -48,8 +48,8 @@ coll_threshold: 0.6
 # Indices for mux controller
 mux_size: 4
 joy_mux_idx: 0
-safety_copilot_mux_idx: 1
-unused_idx: 2
+key_mux_idx: 1
+safety_copilot_mux_idx: 2
 random_walker_mux_idx: 3
 # **Add index for new planning method here**
 # **(increase mux_size accordingly)**
@@ -59,14 +59,24 @@ new_method_mux_idx: -1
 joy: true
 # Joystick indices
 joy_speed_axis: 1
-joy_angle_axis: 3
+joy_angle_axis: 2
 joy_max_speed: 2. # meters/second
-# Indices for mux
+# Joystick indices for toggling mux
 joy_button_idx: 4  # LB button
+key_button_idx: 6 # not sure 
 copilot_button_idx: 0 # A button
 random_walk_button_idx: 5 # RB button
 # **Add button for new planning method here**
 new_button_idx: -1
+
+# Keyboard characters for toggling mux
+joy_key_char: "j"
+keyboard_key_char: "k"
+copilot_key_char: "p"
+random_walk_key_char: "r"
+# **Add button for new planning method here**
+new_key_char: "z"
+
 
 # map-collision parameters
 inflation_size: 5
@@ -82,10 +92,15 @@ distance_transform_topic: "/dt"
 scan_topic: "/scan"
 pose_topic: "/pose"
 odom_topic: "/odom"
+imu_topic: "/imu"
 pose_rviz_topic: "/initialpose"
-
-collision_topic: "/coll"
+keyboard_topic: "/key"
 mux_topic: "/mux"
+
+# Topic names of various drive channels
+rand_drive_topic: "/rand_drive"
+# **Add name for new planning method here**
+new_drive_topic: "/new_drive"
 
 
 # name of file to write collision log to 

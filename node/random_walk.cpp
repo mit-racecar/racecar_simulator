@@ -6,14 +6,13 @@
 #include <ackermann_msgs/AckermannDrive.h>
 
 // Subscribe to a topic with this message type
-#include <std_msgs/Int32MultiArray.h>
+#include <nav_msgs/Odometry.h>
 
 // for printing
 #include <iostream>
 
 // for RAND_MAX
 #include <cstdlib>
-
 
 class RandomWalker {
 private:
@@ -24,7 +23,7 @@ private:
     double max_speed, max_steering_angle;
 
     // Listen for mux messages
-    ros::Subscriber mux_sub;
+    ros::Subscriber odom_sub;
 
     // Publish drive data
     ros::Publisher drive_pub;
@@ -42,9 +41,9 @@ public:
         n = ros::NodeHandle("~");
 
         // get topic names
-        std::string drive_topic, mux_topic;
-        n.getParam("drive_topic", drive_topic);
-        n.getParam("mux_topic", mux_topic);
+        std::string drive_topic, odom_topic;
+        n.getParam("rand_drive_topic", drive_topic);
+        n.getParam("odom_topic", odom_topic);
 
         // get car parameters
         n.getParam("max_speed", max_speed);
@@ -58,17 +57,14 @@ public:
         drive_pub = n.advertise<ackermann_msgs::AckermannDriveStamped>(drive_topic, 10);
 
         // Start a subscriber to listen to mux messages
-        mux_sub = n.subscribe(mux_topic, 1, &RandomWalker::mux_callback, this);
+        odom_sub = n.subscribe(odom_topic, 1, &RandomWalker::odom_callback, this);
 
 
 	}
 
 
-	void mux_callback(const std_msgs::Int32MultiArray & msg) {
-
-		// if this mux channel isn't on, don't do anything
-        if (!bool(msg.data[random_walker_mux_idx])) 
-        	return;
+	void odom_callback(const nav_msgs::Odometry & msg) {
+        // publishing is done in odom callback just so it's at the same rate as the sim
 
         // initialize message to be published
         ackermann_msgs::AckermannDriveStamped drive_st_msg;
@@ -101,7 +97,6 @@ public:
         // reset previous desired angle
         prev_angle = drive_msg.steering_angle;
 
-
         // set drive message in drive stamped message
         drive_st_msg.drive = drive_msg;
 
@@ -120,4 +115,3 @@ int main(int argc, char ** argv) {
     ros::spin();
     return 0;
 }
-
