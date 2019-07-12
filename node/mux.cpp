@@ -184,10 +184,10 @@ public:
 
             if (msg.data == "w") {
                 // Forward
-                desired_velocity = max_speed;
+                desired_velocity = 2.0; // a good speed for keyboard control
             } else if (msg.data == "s") {
                 // Backwards
-                desired_velocity = -max_speed;
+                desired_velocity = -2.0;
             } else if (msg.data == "a") {
                 // Steer left and keep speed
                 desired_steer = max_steering_angle;
