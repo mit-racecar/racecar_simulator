@@ -3,7 +3,7 @@
 This is a lightweight 2D simulator of the UPenn F1/10 Racecar.
 It can be built with ROS, or it can be used as a standalone C++ library.
 
-**NOTE** we are working on more thorough documentation, but for now please read this document.
+**NOTE:** we are working on more thorough documentation, but for now please read this document.
 
 ## ROS
 
@@ -59,10 +59,11 @@ You can use a keyboard or USB joystick to drive the car around, or you can place
 
 The simulator was set up with two main objectives in mind- similitude to the real car and fast prototyping of racing algorithms. The *simulator* node was written such that it can be swapped out with the F1/10 car itself, and if all topic names remain the same, the same exact code can be run to drive the car. The rest of the ROS nodes are organized so that new planning algorithms can be added quickly and toggled between during driving.
 
-![Simplified graph of ROS nodes](https://raw.githubusercontent.com/mlab-upenn/racecar_simulator/master/media/sim_graph_public.png)
+![Simplified graph of ROS nodes](https://raw.githubusercontent.com/mlab-upenn/racecar_simulator/joe-dev/media/sim_graph_public.png)
 
 Our public simulator includes a simple *random driver* node as an example for what a planning node should look like. Each planner can listen to the sensor data published by the *simulator* and then publish [AckermannDrive](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDrive.html) messages to their own specific topic (e.g., ```/random_drive```). The *mux* node listens to all of these topics, then takes the message from whichever planner is turned on and publishes it to the main ```/drive``` topic, which the *simulator* listens to. Note that only the velocity and steering angle specified in the message are used. The *mux* node also listens to joystick and keyboard messages too, for manual driving.
 The *behavior controller* node tells the *mux* node which planner is on through the ```/mux``` topic. By default, each planner (including keyboard and joystick) is mapped to a joystick button and keyboard key, and they are simply toggled on and off manually. 
+Additionally, upon collision, the car will halt and all mux channels will be clear- nothing will be in control until manual intervention.
 
 To instantly move the car to a new state publish [Pose](http://docs.ros.org/lunar/api/geometry_msgs/html/msg/Pose.html) messages to the ```/pose``` topic. This can be useful for scripting the car through a series of automated tests.
 
