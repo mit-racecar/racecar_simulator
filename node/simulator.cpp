@@ -458,10 +458,12 @@ public:
 
         // calculate velocity
         double steer_vel;
-        if (std::abs(dif) > .02)  // if the difference is not trivial
+        if (std::abs(dif) > .0001)  // if the difference is not trivial
             steer_vel = dif / std::abs(dif) * max_steering_vel;
-        else
+        else {
             steer_vel = 0;
+        }
+            
 
 
         return steer_vel;

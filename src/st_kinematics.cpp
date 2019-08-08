@@ -93,7 +93,6 @@ CarState STKinematics::update_k(
 
     CarState end;
 
-
     // compute first derivatives of state
     double x_dot = start.velocity * std::cos(start.theta);
     double y_dot = start.velocity * std::sin(start.theta);
@@ -104,15 +103,14 @@ CarState STKinematics::update_k(
             start.velocity * steer_angle_vel / (p.wheelbase * std::pow(std::cos(start.steer_angle), 2));
     double slip_angle_dot = 0;
 
-
     // update state
     end.x = start.x + x_dot * dt;
     end.y = start.y + y_dot * dt;
     end.theta = start.theta + theta_dot * dt;
     end.velocity = start.velocity + v_dot * dt;
     end.steer_angle = start.steer_angle + steer_angle_dot * dt;
-    end.angular_velocity = start.angular_velocity + theta_double_dot * dt;
-    end.slip_angle = start.slip_angle + slip_angle_dot * dt;
+    end.angular_velocity = 0; //start.angular_velocity + theta_double_dot * dt;
+    end.slip_angle = 0; //start.slip_angle + slip_angle_dot * dt;
     end.st_dyn = false;
 
 
