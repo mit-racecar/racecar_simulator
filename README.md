@@ -82,7 +82,7 @@ There are several steps that necessary to adding a new planning node. There is c
 * Make a new node that publishes to a new drive topic- look at *random_walker* for an example
 * Launch the node in the launch file ```simulator.launch```
 * Make a new ```Channel``` instance at the end of the Mux() constructor in ```mux.cpp```
-* Add if statement to the end of the joystick yea and keyboard callbacks (key\_callback(), joy\_callback) in ```behavior_controller.cpp```
+* Add if statement to the end of the joystick and keyboard callbacks (key\_callback(), joy\_callback) in ```behavior_controller.cpp```
 
 In ```params.yaml```, add the following:
 
@@ -165,8 +165,6 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 ```joy_angle_axis```: The index of the joystick axis used to control the angle of the car.  To determine this parameter it may be useful to print out the joystick messages with ```rostopic echo /joy```.
 
 ```joy_button_idx```: The index of the joystick button used to turn on/off joystick driving.
-
-```joy_max_speed```: The maximum speed the joystick is able to propel the car, measured in meters per second.
 
 ## C++ API
 
