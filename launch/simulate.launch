@@ -1,6 +1,6 @@
 <launch>
   <!-- Listen to messages from joysicks -->
-  <node pkg="joy" name="joy_node" type="joy_node"/>
+  <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
 
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
@@ -13,6 +13,8 @@
   <node pkg="racecar_simulator" name="racecar_simulator" type="simulate" output="screen">
     <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
   </node>
+  
+  <node type="rviz" name="rviz" pkg="rviz" ouput="screen"/>
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="global_costmap" /> 
