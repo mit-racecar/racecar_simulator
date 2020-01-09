@@ -49,6 +49,7 @@ if(DEFINED CATKIN_DEVEL_PREFIX)
     nav_msgs
     sensor_msgs
     geometry_msgs
+    move_base
     )
 
   # Include catkin_libraries
