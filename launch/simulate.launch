@@ -3,7 +3,8 @@
   <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
 
   <!-- Launch a map from the maps folder-->
-  <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
+  <!-- <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/> -->
+  <arg name="map" default="$(find racecar_simulator)/maps/ucsd_atkinson_1f_full_tuned.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
 
   <!-- Launch the racecar model -->
