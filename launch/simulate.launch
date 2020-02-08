@@ -3,10 +3,9 @@
   <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
 
   <!-- Launch a map from the maps folder-->
-  <!-- <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/> -->
-  <arg name="map" default="$(find racecar_simulator)/maps/ucsd_atkinson_1f_full_tuned.yaml"/>
+  <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
-
+  
   <!-- Launch the racecar model -->
   <include file="$(find racecar_simulator)/launch/racecar_model.launch"/>
 
@@ -15,8 +14,8 @@
     <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
   </node>
   
-  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find racecar_simulator)/launch/map_robot.rviz" />
-
+  <include file="$(find amcl)/examples/amcl_diff.launch" />
+  
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="global_costmap" /> 
     <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="local_costmap" />
@@ -24,4 +23,7 @@
     <rosparam file="$(find racecar_simulator)/params/global_costmap_param.yaml" command="load" /> 
     <rosparam file="$(find racecar_simulator)/params/base_local_planner.yaml" command="load" />
   </node>
+
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find racecar_simulator)/launch/map_robot.rviz" />
+
 </launch>
