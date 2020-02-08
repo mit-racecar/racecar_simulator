@@ -19,7 +19,7 @@ using namespace racecar_simulator;
 class RacecarSimulator {
   private:
     // The transformation frames used
-    std::string map_frame, base_frame, scan_frame;
+    std::string map_frame, base_frame, scan_frame, odom_frame;
 
     // The car state and parameters
     Pose2D pose;
@@ -43,6 +43,9 @@ class RacecarSimulator {
 
     // For publishing transformations
     tf2_ros::TransformBroadcaster br;
+
+    // For publishing odom
+    tf2_ros::TransformBroadcaster br_odom;
 
     // A timer to update the pose
     ros::Timer update_pose_timer;
@@ -91,6 +94,7 @@ class RacecarSimulator {
       n.getParam("map_frame", map_frame);
       n.getParam("base_frame", base_frame);
       n.getParam("scan_frame", scan_frame);
+      n.getParam("odom_frame", odom_frame);
 
       // Fetch the car parameters
       int scan_beams;
@@ -177,10 +181,24 @@ class RacecarSimulator {
       ts.header.frame_id = map_frame;
       ts.child_frame_id = base_frame;
 
+      // Publish an odom/base_link transformation
+      geometry_msgs::TransformStamped odom_trans;
+      odom_trans.header.stamp = timestamp;
+      odom_trans.header.frame_id = "odom";
+      odom_trans.child_frame_id = "base_link";
+  
+      odom_trans.transform.translation.x = pose.x;
+      odom_trans.transform.translation.y = pose.y;
+      odom_trans.transform.translation.z = 0.0;
+      odom_trans.transform.rotation.x = quat.x();
+      odom_trans.transform.rotation.y = quat.y();
+      odom_trans.transform.rotation.z = quat.z();
+      odom_trans.transform.rotation.w = quat.w();
+
       // Make an odom message as well
       nav_msgs::Odometry odom;
       odom.header.stamp = timestamp;
-      odom.header.frame_id = map_frame;
+      odom.header.frame_id = odom_frame;
       odom.child_frame_id = base_frame;
       odom.pose.pose.position.x = pose.x;
       odom.pose.pose.position.y = pose.y;
@@ -195,6 +213,7 @@ class RacecarSimulator {
       // Publish them
       if (broadcast_transform) br.sendTransform(ts);
       odom_pub.publish(odom);
+      if (broadcast_transform) br_odom.sendTransform(odom_trans);
       // Set the steering angle to make the wheels move
       set_steering_angle(steering_angle, timestamp);
 
