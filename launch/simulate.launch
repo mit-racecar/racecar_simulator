@@ -14,7 +14,10 @@
     <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
   </node>
   
-  <node type="rviz" name="rviz" pkg="rviz" ouput="screen"/>
+  <group ns="static_tf">
+    <node name="base_to_laser_tf2" pkg="tf2_ros" type="static_transform_publisher"
+        args="0.1 0.0 0.30 0.0 0.0 0.0 base_link laser" />
+  </group>
 
   <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
     <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="global_costmap" /> 
