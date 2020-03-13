@@ -174,18 +174,24 @@ class RacecarSimulator {
       t.rotation.z = quat.z();
       t.rotation.w = quat.w();
 
-      // Add a header to the transformation
-      geometry_msgs::TransformStamped ts;
-      ts.transform = t;
-      ts.header.stamp = timestamp;
-      ts.header.frame_id = map_frame;
-      ts.child_frame_id = base_frame;
+      // Publish a map/odom transformation
+      geometry_msgs::TransformStamped map_to_odom;
+      map_to_odom.header.stamp = timestamp;
+      map_to_odom.transform.translation.x = 0.0;
+      map_to_odom.transform.translation.y = 0.0;
+      map_to_odom.transform.translation.z = 0.0;
+      map_to_odom.transform.rotation.x = 0.0;
+      map_to_odom.transform.rotation.y = 0.0;
+      map_to_odom.transform.rotation.z = 0.0;
+      map_to_odom.transform.rotation.w = 1.0;
+      map_to_odom.header.frame_id = map_frame;
+      map_to_odom.child_frame_id = odom_frame;
 
       // Publish an odom/base_link transformation
       geometry_msgs::TransformStamped odom_trans;
       odom_trans.header.stamp = timestamp;
-      odom_trans.header.frame_id = "odom";
-      odom_trans.child_frame_id = "base_link";
+      odom_trans.header.frame_id = odom_frame;
+      odom_trans.child_frame_id = base_frame;
   
       odom_trans.transform.translation.x = pose.x;
       odom_trans.transform.translation.y = pose.y;
@@ -211,7 +217,7 @@ class RacecarSimulator {
         AckermannKinematics::angular_velocity(speed, steering_angle, wheelbase);
 
       // Publish them
-      if (broadcast_transform) br.sendTransform(ts);
+      if (broadcast_transform) br.sendTransform(map_to_odom);
       odom_pub.publish(odom);
       if (broadcast_transform) br_odom.sendTransform(odom_trans);
       // Set the steering angle to make the wheels move
