@@ -13,11 +13,6 @@
   <node pkg="racecar_simulator" name="racecar_simulator" type="simulate" output="screen">
     <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
   </node>
-  
-  <group ns="static_tf">
-    <node name="base_to_laser_tf2" pkg="tf2_ros" type="static_transform_publisher"
-        args="0.1 0.0 0.30 0.0 0.0 0.0 base_link laser" />
-  </group>
 
   <include file="$(find amcl)/examples/amcl_diff.launch" />
   
