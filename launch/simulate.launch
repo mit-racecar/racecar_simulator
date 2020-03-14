@@ -1,6 +1,6 @@
 <launch>
   <!-- Listen to messages from joysicks -->
-  <!-- <node pkg="joy" name="joy_node" type="joy_node"/> -->
+  <node pkg="joy" name="joy_node" type="joy_node"/>
 
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
