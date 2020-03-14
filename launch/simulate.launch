@@ -5,7 +5,7 @@
   <!-- Launch a map from the maps folder-->
   <arg name="map" default="$(find racecar_simulator)/maps/building_31.yaml"/>
   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map)"/>
-
+  
   <!-- Launch the racecar model -->
   <include file="$(find racecar_simulator)/launch/racecar_model.launch"/>
 
@@ -13,4 +13,23 @@
   <node pkg="racecar_simulator" name="racecar_simulator" type="simulate" output="screen">
     <rosparam command="load" file="$(find racecar_simulator)/params.yaml"/>
   </node>
+
+  <!-- Launch the amcl node for tracking position -->
+  <include file="$(find amcl)/examples/amcl_diff.launch" />
+  
+  <!-- Launch the move base planner to plan a trajectory -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="global_costmap" /> 
+    <rosparam file="$(find racecar_simulator)/params/costmap_common_config.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find racecar_simulator)/params/local_costmap_param.yaml" command="load" />
+    <rosparam file="$(find racecar_simulator)/params/global_costmap_param.yaml" command="load" /> 
+    <rosparam file="$(find racecar_simulator)/params/base_local_planner.yaml" command="load" />
+  </node>
+
+  <!-- Launch the bridge for convertng Twist to AckermannDrive -->
+  <node pkg="racecar_simulator" name="twist_to_ackermann" type="twist_to_ackermann.py" output="screen"/>
+
+  <!-- Launch rviz for visualization -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find racecar_simulator)/launch/map_robot.rviz" />
+
 </launch>
