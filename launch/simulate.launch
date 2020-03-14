@@ -24,6 +24,8 @@
     <rosparam file="$(find racecar_simulator)/params/base_local_planner.yaml" command="load" />
   </node>
 
+  <node pkg="racecar_simulator" name="twist_to_ackermann" type="twist_to_ackermann.py" output="screen"/>
+
   <node type="rviz" name="rviz" pkg="rviz" args="-d $(find racecar_simulator)/launch/map_robot.rviz" />
 
 </launch>
