@@ -26,14 +26,7 @@ def generate_launch_description():
             name='racecar_simulator',
             output='screen',
             parameters=[
-                f'{package}/params.yaml'
-            ]
-        ),
-        launch.actions.IncludeLaunchDescription(
-            launch.launch_description_sources.PythonLaunchDescriptionSource(
-                f'{package}/launch/racecar_model.launch.py'
-            )
-        )
+            f'{package}/config/params.yaml'
     ])
     return ld
 
