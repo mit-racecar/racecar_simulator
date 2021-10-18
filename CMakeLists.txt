@@ -57,6 +57,9 @@ install(TARGETS
   DESTINATION lib/${PROJECT_NAME})
 
 install(
+  DIRECTORY 
+  launch
+  maps  
   config
   DESTINATION share/${PROJECT_NAME})
 
