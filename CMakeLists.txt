@@ -1,22 +1,26 @@
-cmake_minimum_required(VERSION 3.1)
-
+cmake_minimum_required(VERSION 3.8)
 project(racecar_simulator)
 
-set(CMAKE_CXX_STANDARD 11)
-
-if(NOT CMAKE_BUILD_TYPE)
-  set (CMAKE_BUILD_TYPE Release)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 
-set(CMAKE_CXX_FLAGS "-Wall -Wextra")
-set(CMAKE_CXX_FLAGS_DEBUG "-g")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
 
-######################################
-# Compile the library >
-######################################
 
-# Add includes
+# find dependencies
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
+find_package(ackermann_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+
 include_directories(include)
 file(GLOB SRC_FILES src/*.cpp)
 add_library(${PROJECT_NAME} ${SRC_FILES})
@@ -30,54 +34,42 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/${PROJECT_NAME}
         DESTINATION include)
 
-######################################
-# < End compile the library
-######################################
+add_executable(distance_transform_visualizer node/distance_transform_visualizer.cpp)
+ament_target_dependencies(distance_transform_visualizer rclcpp nav_msgs)
+target_link_libraries(distance_transform_visualizer ${LIBS})
 
-######################################
-# ROS >
-######################################
+add_executable(simulate node/simulate.cpp)
+ament_target_dependencies(simulate 
+  rclcpp 
+  tf2
+  tf2_ros 
+  tf2_geometry_msgs 
+  ackermann_msgs
+  nav_msgs 
+  sensor_msgs 
+  geometry_msgs
+)
+target_link_libraries(simulate ${LIBS})
 
-# Only run this code in the catkin environment
-if(DEFINED CATKIN_DEVEL_PREFIX)
-  find_package(catkin REQUIRED COMPONENTS
-    roscpp
-    tf2
-    tf2_ros
-    tf2_geometry_msgs
-    ackermann_msgs
-    nav_msgs
-    sensor_msgs
-    geometry_msgs
-    )
+install(TARGETS
+  distance_transform_visualizer
+  simulate
+  DESTINATION lib/${PROJECT_NAME})
 
-  # Include catkin_libraries
-  catkin_package(
-      INCLUDE_DIRS include
-      LIBRARIES ${PROJECT_NAME}
-  )
-  set(LIBS ${LIBS} ${catkin_LIBRARIES})
-  include_directories(include ${catkin_INCLUDE_DIRS})
+install(
+  DIRECTORY launch    
+  DESTINATION share/${PROJECT_NAME})
 
-  # Add the nodes
-  file(GLOB NODE_SRC_FILES node/*.cpp)
-  foreach(_node_file ${NODE_SRC_FILES})
-      get_filename_component(_node_name ${_node_file} NAME_WE)
-      add_executable(${_node_name} ${_node_file})
-      target_link_libraries(${_node_name} ${LIBS})
-  endforeach()
+install(
+  FILES 
+  params.yaml
+  racecar.xacro    
+  DESTINATION share/${PROJECT_NAME})
 
-  # Install the library
-  install(TARGETS ${PROJECT_NAME}
-      ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-      LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-      RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-  )
-  install(DIRECTORY include/${PROJECT_NAME}/
-      DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  )
+if(BUILD_TESTING)
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 endif()
 
-######################################
-# < End ROS
-######################################
+
+ament_package()
