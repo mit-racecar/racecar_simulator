@@ -1,64 +1,47 @@
 # Racecar Simulator
 
-This is a lightweight 2D simulator of the MIT Racecar.
-It can be built with ROS, or it can be used as a standalone C++ library.
+This is a lightweight 2D simulator of the MIT Racecar, ported to ROS2 by
+the Imperial Driverless team.
 
 ## ROS
 
 ### Dependencies
 
-If you have ```ros-melodic-desktop``` installed, the additional dependencies you must install are:
+In order to install the required dependencies run:
 
-- tf2_geometry_msgs
-- ackermann_msgs
-- joy
-- map_server
-
-You can install them by running:
-
-    sudo apt-get install ros-melodic-tf2-geometry-msgs ros-melodic-ackermann-msgs ros-melodic-joy ros-melodic-map-server
-
-The full list of dependencies can be found in the ```package.xml``` file.
+```
+rosdep install --from-paths .
+```
 
 ### Installation
 
-To install the simulator package, clone it into your catkin workspace:
+To install and load the package run:
 
-    cd ~/catkin_ws/src
-    git clone https://github.com/mit-racecar/racecar_simulator.git
-    
-Then run ```catkin_make``` to build it:
-
-    cd ~/catkin_ws
-    catkin_make
-    source devel/setup.bash
+```
+colcon build && . install/setup.bash
+```
 
 ## Quick Start
 
 To run the simulator on its own, run:
 
-    roslaunch racecar_simulator simulate.launch
+```
+ros2 launch racecar_simulator simulate.launch.py
+```
 
-This will launch everything you need for a full simulation; roscore, the simulator, a preselected map, a model of the racecar and the joystick server.
-
-### RVIZ Visualization
-
-With the simulator running, open rviz.
-In the left panel at the bottom click the "Add" button, then in the "By topic" tab add the ```/map``` topic and the ```/scan``` topic.
-Then in the "By display type" tab add the RobotModel type.
-In the left panel under the newly added LaserScan section, change the size to 0.1 meters for a clearer visualization of the lidar (shown in rainbow).
+This will launch everything you need for a full simulation: the simulator, a preselected map, RVIZ, and model of the racecar. Joystick server not yet implemented
 
 You should see the car sitting in the middle of a 2D map of MIT's building 31 as shown below:
 
-![The racecar in the starting position](https://raw.githubusercontent.com/mit-racecar/racecar_simulator/master/media/racecar_simulator_rviz_1.png)
+![The racecar in the starting position](media/racecar_simulator_rviz_1.png)
 
 You can use a USB joystick to drive the car around, or you can place the car manually by clicking the "2D Pose Estimate button" on the top of the screen and dragging your mouse on the desired pose.
 
-![The racecar in a cubicle](https://raw.githubusercontent.com/mit-racecar/racecar_simulator/master/media/racecar_simulator_rviz_2.png)
+![The racecar in a cubicle](media/racecar_simulator_rviz_2.png)
 
 ### ROS API
 
-To make the car drive autonomously, publish [AckermannDrive](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDrive.html) messages to the ```/drive``` topic.
+To make the car drive autonomously, publish [AckermannDriveStamped](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDriveStamped.html) messages to the ```/drive``` topic.
 
 To instantly move the car to a new state publish [Pose](http://docs.ros.org/lunar/api/geometry_msgs/html/msg/Pose.html) messages to the ```/pose``` topic. This can be useful for scripting the car through a series of automated tests.
 
@@ -68,7 +51,7 @@ The pose of the car is broadcast as a transformation between the ```map``` frame
 
 ### Parameters
 
-The parameters listed below can be modified in the ```params.yaml``` file.
+The parameters listed below can be modified in the ```config/params.yaml``` file.
 
 #### Topics
 
@@ -96,7 +79,7 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 
 #### Simulator Parameters
 
-```update_pose_rate```: The rate at which the simulator will publish the pose of the car and simulated scan, measured in seconds. Since the dynamics of the system are evaluated analytically, this won't effect the dynamics of the system, however it will effect how often the pose of the car reflects a change in the control input.
+```update_pose_period```: The rate at which the simulator will publish the pose of the car and simulated scan, measured in seconds. Since the dynamics of the system are evaluated analytically, this won't effect the dynamics of the system, however it will effect how often the pose of the car reflects a change in the control input.
 
 #### Car Parameters
 
@@ -128,15 +111,8 @@ The parameters listed below can be modified in the ```params.yaml``` file.
 
 ```joy_max_speed```: The maximum speed the joystick is able to propel the car, measured in meters per second.
 
-## C++ API
-
-## Implementation Details
-
-Distance transform.
-Ackermann kinematics
-
 ## TODO
 
-- Finish documentation
+- Finish implementation documentation
 - Simulate odometry and imu
 - Add colision detection?
