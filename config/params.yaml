@@ -37,7 +37,7 @@ lightweight_lidar_only_simulator:
 
     # The names of topics to listen and publish to
     joy_topic: "/joy"
-    drive_topic: "/drive"
+    drive_topic: "/ackermann_drive_commands"
     map_topic: "/map"
     distance_transform_topic: "/dt"
     scan_topic: "/scan"

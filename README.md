@@ -41,7 +41,7 @@ You can use a USB joystick to drive the car around, or you can place the car man
 
 ### ROS API
 
-To make the car drive autonomously, publish [AckermannDriveStamped](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDriveStamped.html) messages to the ```/drive``` topic.
+To make the car drive autonomously, publish [AckermannDriveStamped](http://docs.ros.org/melodic/api/ackermann_msgs/html/msg/AckermannDriveStamped.html) messages to the `/ackermann_drive_commands` topic.
 
 To instantly move the car to a new state publish [Pose](http://docs.ros.org/lunar/api/geometry_msgs/html/msg/Pose.html) messages to the ```/pose``` topic. This can be useful for scripting the car through a series of automated tests.
 
