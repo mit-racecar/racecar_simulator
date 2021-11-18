@@ -1,8 +1,8 @@
-#include "racecar_simulator/pose_2d.hpp"
-#include "racecar_simulator/scan_simulator_2d.hpp"
-#include "racecar_simulator/distance_transform.hpp"
+#include "lightweight_lidar_only_simulator/pose_2d.hpp"
+#include "lightweight_lidar_only_simulator/scan_simulator_2d.hpp"
+#include "lightweight_lidar_only_simulator/distance_transform.hpp"
 
-using namespace racecar_simulator;
+using namespace lightweight_lidar_only_simulator;
 
 ScanSimulator2D::ScanSimulator2D(
     int num_beams_, 

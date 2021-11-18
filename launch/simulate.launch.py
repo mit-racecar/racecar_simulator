@@ -20,7 +20,7 @@ def delayed(e: EmitEvent, by: timedelta) -> ExecuteProcess:
     )
 
 def generate_launch_description():
-    package_dir = get_package_share_directory('racecar_simulator')
+    package_dir = get_package_share_directory('lightweight_lidar_only_simulator')
 
 
     # ============
@@ -101,9 +101,9 @@ def generate_launch_description():
         ))
 
     simulator_node = Node(
-        package='racecar_simulator',
+        package='lightweight_lidar_only_simulator',
         executable='simulate',
-        name='racecar_simulator',
+        name='lightweight_lidar_only_simulator',
         output='screen',
         parameters=[
             f'{package_dir}/config/params.yaml'

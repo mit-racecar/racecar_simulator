@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(racecar_simulator)
+project(lightweight_lidar_only_simulator)
 
 if(NOT CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 14)

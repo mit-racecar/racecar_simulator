@@ -1,9 +1,9 @@
 #include <cmath>
 
-#include "racecar_simulator/pose_2d.hpp"
-#include "racecar_simulator/ackermann_kinematics.hpp"
+#include "lightweight_lidar_only_simulator/pose_2d.hpp"
+#include "lightweight_lidar_only_simulator/ackermann_kinematics.hpp"
 
-using namespace racecar_simulator;
+using namespace lightweight_lidar_only_simulator;
 
 double AckermannKinematics::angular_velocity(
     double velocity,

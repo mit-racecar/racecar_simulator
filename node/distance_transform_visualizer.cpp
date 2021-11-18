@@ -1,7 +1,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 
-#include "racecar_simulator/distance_transform.hpp"
+#include "lightweight_lidar_only_simulator/distance_transform.hpp"
 
 namespace distance_transform_visualizer
 {
@@ -53,7 +53,7 @@ class DistanceTransformVisualizer : public rclcpp::Node {
       }
      
       // Apply the distance transform
-      racecar_simulator::DistanceTransform::distance_2d(
+      lightweight_lidar_only_simulator::DistanceTransform::distance_2d(
           dt,
           dt_msg.info.width,
           dt_msg.info.height);

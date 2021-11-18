@@ -1,4 +1,4 @@
-racecar_simulator:
+lightweight_lidar_only_simulator:
   ros__parameters:
 
     # The distance between the front and

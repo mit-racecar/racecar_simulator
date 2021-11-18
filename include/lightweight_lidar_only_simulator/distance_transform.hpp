@@ -3,7 +3,7 @@
 #include <vector>
 #include <limits>
 
-namespace racecar_simulator {
+namespace lightweight_lidar_only_simulator {
 
 class DistanceTransform {
 

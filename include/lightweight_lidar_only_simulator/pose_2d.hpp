@@ -1,6 +1,6 @@
 #pragma once
 
-namespace racecar_simulator {
+namespace lightweight_lidar_only_simulator {
 
 struct Pose2D {
     double x;

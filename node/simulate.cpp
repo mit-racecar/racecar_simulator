@@ -11,11 +11,11 @@
 #include <geometry_msgs/msg/pose.hpp>
 #include <geometry_msgs/msg/pose_with_covariance_stamped.hpp>
 
-#include "racecar_simulator/pose_2d.hpp"
-#include "racecar_simulator/ackermann_kinematics.hpp"
-#include "racecar_simulator/scan_simulator_2d.hpp"
+#include "lightweight_lidar_only_simulator/pose_2d.hpp"
+#include "lightweight_lidar_only_simulator/ackermann_kinematics.hpp"
+#include "lightweight_lidar_only_simulator/scan_simulator_2d.hpp"
 
-namespace racecar_simulator {
+namespace lightweight_lidar_only_simulator {
 
 class RacecarSimulator : public rclcpp::Node {
   private:
@@ -64,7 +64,7 @@ class RacecarSimulator : public rclcpp::Node {
 
   public:
 
-    RacecarSimulator() : rclcpp::Node("racecar_simulator") {
+    RacecarSimulator() : rclcpp::Node("lightweight_lidar_only_simulator") {
 
       // Initialize the pose and driving commands
       pose_ = {0, 0, 0};
@@ -333,11 +333,11 @@ class RacecarSimulator : public rclcpp::Node {
     }
 };
 
-} // namespace racecar_simulator
+} // namespace lightweight_lidar_only_simulator
 
 int main(int argc, char ** argv) {
   rclcpp::init(argc, argv);
-  auto node = std::make_shared<racecar_simulator::RacecarSimulator>();
+  auto node = std::make_shared<lightweight_lidar_only_simulator::RacecarSimulator>();
   rclcpp::spin(node);
   rclcpp::shutdown();
   return 0;

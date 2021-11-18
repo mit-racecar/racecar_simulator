@@ -2,14 +2,14 @@
 #include <vector>
 #include <cmath>
 
-#include "racecar_simulator/distance_transform.hpp"
+#include "lightweight_lidar_only_simulator/distance_transform.hpp"
 
 // Implementation based on the paper
 // Distance Transforms of Sampled Functions
 // Pedro F. Felzenszwalb and Daniel P. Huttenlocher
 // http://people.cs.uchicago.edu/~pff/papers/dt.pdf
 
-using namespace racecar_simulator;
+using namespace lightweight_lidar_only_simulator;
 
 void DistanceTransform::distance_squared_1d(
     const std::vector<double> & input, 
