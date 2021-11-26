@@ -53,7 +53,19 @@ def generate_launch_description():
         default_value=default_rviz_config_path,
         description='Absolute path to rviz config file')
 
-
+    # using the version of topic_tools from https://github.com/mateusz-lichota/topic_tools
+    display_conemap = Node(
+        package='topic_tools',
+        executable='transform_node.py',
+        name='transform',
+        output='screen',
+        parameters=[
+            {'input': '/conemap'},
+            {'output-topic': '/conemap_rviz'},
+            {'output-type': 'visualization_msgs/MarkerArray'},
+            {'expression': 'conemap_to_markerarray.convert(m)'},
+            {'import': ['conemap_to_markerarray']}
+        ])
 
     # ================ 
     # == MAP SERVER ==
@@ -113,6 +125,8 @@ def generate_launch_description():
         map_launch_arg,
         rvizconfig_launch_arg,
     
+        display_conemap,
+
         map_server_node,        
         map_server_inactive_state_handler,
         delayed(map_server_emit_configure_event, by=timedelta(seconds=1.5)),
