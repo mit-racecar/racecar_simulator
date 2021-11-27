@@ -1,6 +1,6 @@
 <package format="2">
   <name>lightweight_lidar_only_simulator</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>A lightweight simulator for a car with lidar</description>
 
   <maintainer email="imperial.driverless@gmail.com">Imperial Driverless</maintainer>
