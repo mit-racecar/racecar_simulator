@@ -55,17 +55,21 @@ The parameters listed below can be modified in the `config/params.yaml` file.
 
 #### Topics
 
-`drive_topic`: The topic to listen to for autonomous driving.
-
 `joy_topic`: The topic to listen to for joystick commands.
 
+`drive_topic`: The topic to listen to for autonomous driving.
+
 `map_topic`: The topic to listen to for maps to use for the simulated scan.
+
+`joint_states_topic`: The topic to publish the joint states to.
+
+`scan_topic`: The topic to publish the simulated scan to.
 
 `pose_topic`: The topic to listen to for instantly setting the position of the car.
 
 `pose_rviz_topic`: The topic to listen to for instantly setting the position of the car with Rviz's "2D Pose Estimate" tool.
 
-`scan_topic`: The topic to publish the simulated scan to.
+`odom_topic`: The topic to publish the odometry to.
 
 `distance_transform_topic`: The topic to publish a distance transform to for visualization (see the implimentation section below).
 
