@@ -40,6 +40,7 @@ lightweight_lidar_only_simulator:
     drive_topic: "/ackermann_drive_commands"
     map_topic: "/map"
     distance_transform_topic: "/dt"
+    joint_states_topic: "/joint_states"
     scan_topic: "/scan"
     pose_topic: "/pose"
     pose_rviz_topic: "/initialpose"

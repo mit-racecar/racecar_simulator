@@ -47,13 +47,13 @@
     </visual>
   </link>
 
-  <joint name="base_to_back_left_wheel" type="fixed">
+  <joint name="base_to_left_rear_wheel" type="fixed">
     <parent link="base_link"/>
-    <child link="back_left_wheel"/>
+    <child link="left_rear_wheel"/>
     <origin xyz="0 ${(wheel_length+width)/2} ${wheel_radius}"/>
   </joint>
 
-  <link name="back_left_wheel">
+  <link name="left_rear_wheel">
     <visual>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
@@ -63,13 +63,13 @@
     </visual>
   </link>
 
-  <joint name="base_to_back_right_wheel" type="fixed">
+  <joint name="base_to_right_rear_wheel" type="fixed">
     <parent link="base_link"/>
-    <child link="back_right_wheel"/>
+    <child link="right_rear_wheel"/>
     <origin xyz="0 ${-(wheel_length+width)/2} ${wheel_radius}"/>
   </joint>
 
-  <link name="back_right_wheel">
+  <link name="right_rear_wheel">
     <visual>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
@@ -79,20 +79,20 @@
     </visual>
   </link>
 
-  <joint name="base_to_front_left_hinge" type="fixed">
+  <joint name="base_to_left_steering_hinge" type="fixed">
     <parent link="base_link"/>
-    <child link="front_left_hinge"/>
+    <child link="left_steering_hinge"/>
     <origin xyz="${wheelbase} ${(wheel_length+width)/2} ${wheel_radius}"/>
   </joint>
 
-  <link name="front_left_hinge"/>
+  <link name="left_steering_hinge"/>
 
-  <joint name="front_left_hinge_to_wheel" type="continuous">
-    <parent link="front_left_hinge"/>
-    <child link="front_left_wheel"/>
+  <joint name="left_steering_hinge_to_wheel" type="continuous">
+    <parent link="left_steering_hinge"/>
+    <child link="left_front_wheel"/>
   </joint>
 
-  <link name="front_left_wheel">
+  <link name="left_front_wheel">
     <visual>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_length}"/>
@@ -102,20 +102,20 @@
     </visual>
   </link>
 
-  <joint name="base_to_front_right_hinge" type="fixed">
+  <joint name="base_to_right_steering_hinge" type="fixed">
     <parent link="base_link"/>
-    <child link="front_right_hinge"/>
+    <child link="right_steering_hinge"/>
     <origin xyz="${wheelbase} ${-(wheel_length+width)/2} ${wheel_radius}"/>
   </joint>
 
-  <link name="front_right_hinge"/>
+  <link name="right_steering_hinge"/>
 
-  <joint name="front_right_hinge_to_wheel" type="continuous">
-    <parent link="front_right_hinge"/>
-    <child link="front_right_wheel"/>
+  <joint name="right_steering_hinge_to_wheel" type="continuous">
+    <parent link="right_steering_hinge"/>
+    <child link="right_front_wheel"/>
   </joint>
 
-  <link name="front_right_wheel">
+  <link name="right_front_wheel">
     <visual>
       <geometry>
         <cylinder radius="${wheel_radius}" length="${wheel_length}"/>

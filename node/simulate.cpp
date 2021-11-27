@@ -6,6 +6,7 @@
 #include <ackermann_msgs/msg/ackermann_drive_stamped.hpp>
 #include <nav_msgs/msg/occupancy_grid.hpp>
 #include <nav_msgs/msg/odometry.hpp>
+#include <sensor_msgs/msg/joint_state.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
 #include <sensor_msgs/msg/joy.hpp>
 #include <geometry_msgs/msg/pose.hpp>
@@ -59,6 +60,7 @@ class RacecarSimulator : public rclcpp::Node {
 
     // Publish a scan, odometry, and imu data
     bool broadcast_transform_;
+    rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr joint_states_pub_;
     rclcpp::Publisher<sensor_msgs::msg::LaserScan>::SharedPtr scan_pub_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_pub_;
 
@@ -73,16 +75,17 @@ class RacecarSimulator : public rclcpp::Node {
       previous_pose_update_ = this->get_clock()->now();
 
       // Get the topic names
-      std::string joy_topic, drive_topic, map_topic, 
+      std::string joy_topic, drive_topic, map_topic, joint_states_topic,
         scan_topic, pose_topic, pose_rviz_topic, odom_topic;
 
-      joy_topic       = declare_parameter<std::string>("joy_topic");
-      drive_topic     = declare_parameter<std::string>("drive_topic");
-      map_topic       = declare_parameter<std::string>("map_topic");
-      scan_topic      = declare_parameter<std::string>("scan_topic");
-      pose_topic      = declare_parameter<std::string>("pose_topic");
-      pose_rviz_topic = declare_parameter<std::string>("odom_topic");
-      odom_topic      = declare_parameter<std::string>("pose_rviz_topic");
+      joy_topic          = declare_parameter<std::string>("joy_topic");
+      drive_topic        = declare_parameter<std::string>("drive_topic");
+      map_topic          = declare_parameter<std::string>("map_topic");
+      joint_states_topic = declare_parameter<std::string>("joint_states_topic");
+      scan_topic         = declare_parameter<std::string>("scan_topic");
+      pose_topic         = declare_parameter<std::string>("pose_topic");
+      pose_rviz_topic    = declare_parameter<std::string>("odom_topic");
+      odom_topic         = declare_parameter<std::string>("pose_rviz_topic");
 
       // Get the transformation frame names
       map_frame_  = declare_parameter<std::string>("map_frame");
@@ -121,6 +124,8 @@ class RacecarSimulator : public rclcpp::Node {
           scan_field_of_view,
           scan_std_dev);
 
+      joint_states_pub_ = this->create_publisher<sensor_msgs::msg::JointState>(joint_states_topic, rclcpp::QoS(1));
+      
       scan_pub_ = this->create_publisher<sensor_msgs::msg::LaserScan>(scan_topic, rclcpp::QoS(1));
 
       odom_pub_ = this->create_publisher<nav_msgs::msg::Odometry>(odom_topic, 1);
@@ -281,21 +286,24 @@ class RacecarSimulator : public rclcpp::Node {
     void set_steering_angle(double steering_angle, builtin_interfaces::msg::Time timestamp) {
       steering_angle_ = std::min(std::max(steering_angle, -max_steering_angle_), max_steering_angle_);
 
-      // Publish the steering angle
-      tf2::Quaternion quat;
-      quat.setEuler(0., 0., steering_angle);
-      geometry_msgs::msg::TransformStamped ts;
-      ts.transform.rotation.x = quat.x();
-      ts.transform.rotation.y = quat.y();
-      ts.transform.rotation.z = quat.z();
-      ts.transform.rotation.w = quat.w();
-      ts.header.stamp = timestamp;
-      ts.header.frame_id = "front_left_hinge";
-      ts.child_frame_id = "front_left_wheel";
-      tf2_br_->sendTransform(ts);
-      ts.header.frame_id = "front_right_hinge";
-      ts.child_frame_id = "front_right_wheel";
-      tf2_br_->sendTransform(ts);
+      sensor_msgs::msg::JointState js;
+      js.header.stamp = timestamp;
+      js.name = std::vector<std::string>{
+        "left_rear_wheel_joint", 
+        "right_rear_wheel_joint", 
+        "left_steering_hinge_joint",
+        "right_steering_hinge_joint",
+        "left_front_wheel_joint",
+        "right_front_wheel_joint"};
+      js.position = std::vector<double>{
+        0, 
+        0, 
+        steering_angle_,
+        steering_angle_,
+        0,
+        0};
+
+      joint_states_pub_->publish(js);
     }
 
     void map_callback(const nav_msgs::msg::OccupancyGrid & msg) {

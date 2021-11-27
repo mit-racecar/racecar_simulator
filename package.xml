@@ -18,6 +18,8 @@
 
   <exec_depend>nav2_map_server</exec_depend>
   <exec_depend>rviz2</exec_depend>
+  <exec_depend>racecar_description</exec_depend>
+  <exec_depend>topic_tools</exec_depend>
 
   <export>
     <build_type>ament_cmake</build_type>

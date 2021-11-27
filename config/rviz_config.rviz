@@ -62,35 +62,12 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        back_left_wheel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        back_right_wheel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
         base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        front_left_hinge:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_left_wheel:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        front_right_hinge:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        front_right_wheel:
+        chassis:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -100,6 +77,34 @@ Visualization Manager:
           Show Axes: false
           Show Trail: false
           Value: true
+        left_front_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_rear_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        left_steering_hinge:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        right_front_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_rear_wheel:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        right_steering_hinge:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       TF Prefix: ""
       Update Interval: 0
@@ -110,19 +115,19 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        back_left_wheel:
+        left_rear_wheel:
           Value: true
-        back_right_wheel:
+        right_rear_wheel:
           Value: true
         base_link:
           Value: true
-        front_left_hinge:
+        left_steering_hinge:
           Value: true
-        front_left_wheel:
+        left_front_wheel:
           Value: true
-        front_right_hinge:
+        right_steering_hinge:
           Value: true
-        front_right_wheel:
+        right_front_wheel:
           Value: true
         laser:
           Value: true
@@ -138,19 +143,7 @@ Visualization Manager:
       Tree:
         map:
           base_link:
-            back_left_wheel:
-              {}
-            back_right_wheel:
-              {}
-            front_left_hinge:
-              front_left_wheel:
-                {}
-            front_right_hinge:
-              front_right_wheel:
-                {}
-            laser:
-              {}
-            laser_model:
+            chassis:
               {}
       Update Interval: 0
       Value: true
@@ -233,21 +226,6 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /initialpose
-    - Class: rviz_default_plugins/SetGoal
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /goal_pose
-    - Class: rviz_default_plugins/PublishPoint
-      Single click: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /clicked_point
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
