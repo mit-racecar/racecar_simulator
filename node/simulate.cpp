@@ -84,8 +84,8 @@ class RacecarSimulator : public rclcpp::Node {
       joint_states_topic = declare_parameter<std::string>("joint_states_topic");
       scan_topic         = declare_parameter<std::string>("scan_topic");
       pose_topic         = declare_parameter<std::string>("pose_topic");
-      pose_rviz_topic    = declare_parameter<std::string>("odom_topic");
-      odom_topic         = declare_parameter<std::string>("pose_rviz_topic");
+      pose_rviz_topic    = declare_parameter<std::string>("pose_rviz_topic");
+      odom_topic         = declare_parameter<std::string>("odom_topic");
 
       // Get the transformation frame names
       map_frame_  = declare_parameter<std::string>("map_frame");
