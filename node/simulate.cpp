@@ -243,14 +243,6 @@ class RacecarSimulator : public rclcpp::Node {
 
         scan_pub_->publish(scan_msg);
 
-        // Publish a transformation between base link and laser
-        geometry_msgs::msg::TransformStamped scan_ts;
-        scan_ts.transform.translation.x = scan_distance_to_base_link_;
-        scan_ts.transform.rotation.w = 1;
-        scan_ts.header.stamp = timestamp;
-        scan_ts.header.frame_id = base_frame_;
-        scan_ts.child_frame_id = scan_frame_;
-        tf2_br_->sendTransform(scan_ts);
       }
     }
 
