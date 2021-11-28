@@ -18,7 +18,6 @@ from launch.event_handlers import OnProcessExit
 from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
 
 
-
 def delayed(e: EmitEvent, by: timedelta) -> ExecuteProcess:
     return ExecuteProcess(
         cmd=['sleep', str(by.total_seconds())],
@@ -27,9 +26,10 @@ def delayed(e: EmitEvent, by: timedelta) -> ExecuteProcess:
         ]
     )
 
-def generate_launch_description():
-    package_dir = get_package_share_directory('lightweight_lidar_only_simulator')
 
+def generate_launch_description():
+    package_dir = get_package_share_directory(
+        'lightweight_lidar_only_simulator')
 
     # ============
     # ==  RVIZ  ==
@@ -50,8 +50,9 @@ def generate_launch_description():
         ))
 
     rvizconfig_launch_arg = DeclareLaunchArgument(
-        name='rvizconfig', 
-        default_value=PathJoinSubstitution([package_dir,'config','rviz_config.rviz']),
+        name='rvizconfig',
+        default_value=PathJoinSubstitution(
+            [package_dir, 'config', 'rviz_config.rviz']),
         description='Absolute path to rviz config file')
 
     # using the version of topic_tools from https://github.com/mateusz-lichota/topic_tools
@@ -68,9 +69,7 @@ def generate_launch_description():
             {'import': ['conemap_to_markerarray']}
         ])
 
-
-
-    # ================ 
+    # ================
     # == MAP SERVER ==
     # ================
     map_server_node = LifecycleNode(
@@ -80,39 +79,40 @@ def generate_launch_description():
         output='screen',
         namespace='',
         parameters=[
-            {'yaml_filename': f'{package_dir}/maps/building_31.yaml'}
+            {'yaml_filename': f'{package_dir}/maps/racetrack.yaml'}
         ])
 
     map_server_emit_activation_event = EmitEvent(
-        event = ChangeState(
-            lifecycle_node_matcher = launch.events.matches_action(map_server_node),
-            transition_id = lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
+        event=ChangeState(
+            lifecycle_node_matcher=launch.events.matches_action(
+                map_server_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_ACTIVATE,
         ))
 
     map_server_emit_configure_event = EmitEvent(
         event=ChangeState(
-            lifecycle_node_matcher = launch.events.matches_action(map_server_node),
-            transition_id = lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
+            lifecycle_node_matcher=launch.events.matches_action(
+                map_server_node),
+            transition_id=lifecycle_msgs.msg.Transition.TRANSITION_CONFIGURE,
         ))
 
     map_server_inactive_state_handler = RegisterEventHandler(
         OnStateTransition(
-            target_lifecycle_node = map_server_node,
-            goal_state = 'inactive',
-            entities = [map_server_emit_activation_event],
+            target_lifecycle_node=map_server_node,
+            goal_state='inactive',
+            entities=[map_server_emit_activation_event],
         ))
 
     map_launch_arg = DeclareLaunchArgument(
         name='map',
-        default_value= f'{package_dir}/maps/building_31.yaml')
-
-
+        default_value=f'{package_dir}/maps/racetrack.yaml')
 
     # ===============
     # ==  RACECAR  ==
     # ===============
     racecar_description = xacro.process(
-        str(Path(get_package_share_directory('racecar_description'), 'urdf/racecar.xacro'))
+        str(Path(get_package_share_directory(
+            'racecar_description'), 'urdf/racecar.xacro'))
     )
 
     robot_state_publisher_node = Node(
@@ -125,7 +125,6 @@ def generate_launch_description():
             }
         ]
     )
-
 
     # =================
     # ==  SIMULATOR  ==
@@ -144,7 +143,7 @@ def generate_launch_description():
         rvizconfig_launch_arg,
         display_conemap,
 
-        map_server_node,        
+        map_server_node,
         map_server_inactive_state_handler,
         delayed(map_server_emit_configure_event, timedelta(seconds=2.)),
         rviz_node,
