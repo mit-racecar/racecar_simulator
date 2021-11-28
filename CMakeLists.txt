@@ -64,8 +64,7 @@ install(
   DESTINATION share/${PROJECT_NAME})
 
 install(
-  FILES 
-  racecar.xacro    
+  FILES   
   DESTINATION share/${PROJECT_NAME})
 
 if(BUILD_TESTING)
