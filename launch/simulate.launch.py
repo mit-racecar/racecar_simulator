@@ -1,16 +1,22 @@
-from ament_index_python.packages import get_package_share_directory
-from launch_ros.actions import Node, LifecycleNode
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, EmitEvent, ExecuteProcess, RegisterEventHandler
-from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
-import launch
-import lifecycle_msgs.msg
-from launch_ros.events.lifecycle import ChangeState
-from launch_ros.event_handlers import OnStateTransition
-from launch.event_handlers import OnProcessExit
+from collections.abc import Iterable
 from datetime import timedelta
-import xacro
 from pathlib import Path
+from typing import Union
+
+import lifecycle_msgs.msg
+import xacro
+from ament_index_python.packages import get_package_share_directory
+from launch_ros.actions import LifecycleNode, Node
+from launch_ros.event_handlers import OnStateTransition
+from launch_ros.events.lifecycle import ChangeState
+
+import launch
+from launch import LaunchDescription
+from launch.actions import (DeclareLaunchArgument, EmitEvent, ExecuteProcess,
+                            RegisterEventHandler)
+from launch.event_handlers import OnProcessExit
+from launch.substitutions import LaunchConfiguration, PathJoinSubstitution
+
 
 
 def delayed(e: EmitEvent, by: timedelta) -> ExecuteProcess:
@@ -106,7 +112,6 @@ def generate_launch_description():
     # ==  RACECAR  ==
     # ===============
     racecar_description = xacro.process(
-        # str(Path(get_package_share_directory('lightweight_lidar_only_simulator'), 'racecar.xacro'))
         str(Path(get_package_share_directory('racecar_description'), 'urdf/racecar.xacro'))
     )
 
@@ -134,15 +139,14 @@ def generate_launch_description():
             f'{package_dir}/config/params.yaml'
         ])
 
-    ld = LaunchDescription([
+    return LaunchDescription([
         map_launch_arg,
         rvizconfig_launch_arg,
         display_conemap,
 
         map_server_node,        
         map_server_inactive_state_handler,
-        delayed(map_server_emit_configure_event, by=timedelta(seconds=1.5)),
-
+        delayed(map_server_emit_configure_event, timedelta(seconds=2.)),
         rviz_node,
         shutdown_on_rviz_exit,
 
@@ -150,7 +154,6 @@ def generate_launch_description():
 
         simulator_node,
     ])
-    return ld
 
 
 if __name__ == '__main__':
