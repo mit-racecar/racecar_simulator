@@ -19,7 +19,7 @@ using namespace racecar_simulator;
 class RacecarSimulator {
   private:
     // The transformation frames used
-    std::string map_frame, base_frame, scan_frame;
+    std::string map_frame, base_frame, scan_frame, odom_frame;
 
     // The car state and parameters
     Pose2D pose;
@@ -43,6 +43,9 @@ class RacecarSimulator {
 
     // For publishing transformations
     tf2_ros::TransformBroadcaster br;
+
+    // For publishing odom
+    tf2_ros::TransformBroadcaster br_odom;
 
     // A timer to update the pose
     ros::Timer update_pose_timer;
@@ -91,6 +94,7 @@ class RacecarSimulator {
       n.getParam("map_frame", map_frame);
       n.getParam("base_frame", base_frame);
       n.getParam("scan_frame", scan_frame);
+      n.getParam("odom_frame", odom_frame);
 
       // Fetch the car parameters
       int scan_beams;
@@ -170,17 +174,37 @@ class RacecarSimulator {
       t.rotation.z = quat.z();
       t.rotation.w = quat.w();
 
-      // Add a header to the transformation
-      geometry_msgs::TransformStamped ts;
-      ts.transform = t;
-      ts.header.stamp = timestamp;
-      ts.header.frame_id = map_frame;
-      ts.child_frame_id = base_frame;
+      // Publish a map/odom transformation
+      geometry_msgs::TransformStamped map_to_odom;
+      map_to_odom.header.stamp = timestamp;
+      map_to_odom.transform.translation.x = 0.0;
+      map_to_odom.transform.translation.y = 0.0;
+      map_to_odom.transform.translation.z = 0.0;
+      map_to_odom.transform.rotation.x = 0.0;
+      map_to_odom.transform.rotation.y = 0.0;
+      map_to_odom.transform.rotation.z = 0.0;
+      map_to_odom.transform.rotation.w = 1.0;
+      map_to_odom.header.frame_id = map_frame;
+      map_to_odom.child_frame_id = odom_frame;
+
+      // Publish an odom/base_link transformation
+      geometry_msgs::TransformStamped odom_trans;
+      odom_trans.header.stamp = timestamp;
+      odom_trans.header.frame_id = odom_frame;
+      odom_trans.child_frame_id = base_frame;
+  
+      odom_trans.transform.translation.x = pose.x;
+      odom_trans.transform.translation.y = pose.y;
+      odom_trans.transform.translation.z = 0.0;
+      odom_trans.transform.rotation.x = quat.x();
+      odom_trans.transform.rotation.y = quat.y();
+      odom_trans.transform.rotation.z = quat.z();
+      odom_trans.transform.rotation.w = quat.w();
 
       // Make an odom message as well
       nav_msgs::Odometry odom;
       odom.header.stamp = timestamp;
-      odom.header.frame_id = map_frame;
+      odom.header.frame_id = odom_frame;
       odom.child_frame_id = base_frame;
       odom.pose.pose.position.x = pose.x;
       odom.pose.pose.position.y = pose.y;
@@ -193,8 +217,9 @@ class RacecarSimulator {
         AckermannKinematics::angular_velocity(speed, steering_angle, wheelbase);
 
       // Publish them
-      if (broadcast_transform) br.sendTransform(ts);
+      if (broadcast_transform) br.sendTransform(map_to_odom);
       odom_pub.publish(odom);
+      if (broadcast_transform) br_odom.sendTransform(odom_trans);
       // Set the steering angle to make the wheels move
       set_steering_angle(steering_angle, timestamp);
 
